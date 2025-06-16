@@ -21,12 +21,12 @@ var (
 	dryRun       bool
 )
 
-var converted, skipped, failed int
+var converted, skipped, failed uint32
 var mu sync.Mutex
 
 var rootCmd = &cobra.Command{
 	Use:   "GoPix",
-	Short: "Convert images in a directory to a specific format",
+	Short: "Convert images in a directory to a specific format By MostafaSensei106, Github: https://github.com/MostafaSensei106",
 	Run: func(cmd *cobra.Command, args []string) {
 		if inputDir == "" || !utils.IsSupportedFormat(targetFormat) {
 			color.Red("❌ Invalid arguments. Use -h for help.")
@@ -70,5 +70,7 @@ func Execute() {
 	rootCmd.Flags().StringVarP(&targetFormat, "to", "t", "png", "Target format (png, jpg, jpeg, webp, tiff or avif)")
 	rootCmd.Flags().BoolVar(&keepOriginal, "keep", false, "Keep original images after conversion")
 	rootCmd.Flags().BoolVar(&dryRun, "dry-run", false, "Preview changes without converting")
+	rootCmd.Version = version
+	rootCmd.Flags().BoolP("update", "u", false, "Update GoPix to the latest version")
 	_ = rootCmd.Execute()
 }
