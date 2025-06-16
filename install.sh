@@ -1,6 +1,9 @@
 #!/bin/bash
 
-# Exit on error, undefined variables, and pipe failures
+# GoPix Installer for Linux, macOS
+# Author: Mr. Mostafa Sensei
+# Version: 1.0.0
+
 set -euo pipefail
 
 # Configuration
