@@ -5,10 +5,17 @@ set -e
 APP_NAME="imgconvert"
 BIN_NAME="imgconvert"
 INSTALL_DIR="$HOME/.local/bin"
+os_name=$(uname -s)
 
 GREEN='\033[0;32m'
 RED='\033[0;31m'
 NC='\033[0m'
+
+echo echo "🖥️ Detected OS: $os_name..."
+if [[ "$os_name" != "Linux" && "$os_name" != "Darwin" ]]; then
+  echo -e "${RED}❌ Unsupported OS: $os_name${NC}"
+  exit 1
+fi
 
 check_dependency() {
     if ! command -v "$1" &> /dev/null; then
