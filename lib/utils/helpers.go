@@ -12,6 +12,8 @@ var SupportedOutput = map[string]bool{
 	"jpg":  true,
 	"jpeg": true,
 	"webp": true,
+	"tiff": true,
+	"avif": true,
 }
 
 func IsSupportedFormat(format string) bool {
@@ -28,7 +30,7 @@ func upgrade() {
 	}
 
 	tmpDir := filepath.Join(homeDir, ".gopix_upgrade_tmp")
-	repoURL := "https://github.com/MostafaSensei/GoPix.git" // ضع الرابط الحقيقي هنا
+	repoURL := "https://github.com/MostafaSensei/GoPix.git"
 
 	os.RemoveAll(tmpDir)
 
