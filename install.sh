@@ -11,10 +11,22 @@ GREEN='\033[0;32m'
 RED='\033[0;31m'
 NC='\033[0m'
 
-echo echo "🖥️ Detected OS: $os_name..."
+echo "🖥️ Detected OS Is $os_name..."
 if [[ "$os_name" != "Linux" && "$os_name" != "Darwin" ]]; then
   echo -e "${RED}❌ Unsupported OS: $os_name${NC}"
   exit 1
+fi
+
+
+if [[ "$1" == "-r" || "$1" == "--remove" ]]; then
+  echo "🧹 Uninstalling $APP_NAME from $INSTALL_DIR ..."
+  if [[ -f "$INSTALL_DIR/$BIN_NAME" ]]; then
+    rm -f "$INSTALL_DIR/$BIN_NAME"
+    echo "✅ Removed $BIN_NAME"
+  else
+    echo "⚠️ $BIN_NAME not found in $INSTALL_DIR"
+  fi
+  exit 0
 fi
 
 check_dependency() {
@@ -22,6 +34,7 @@ check_dependency() {
         echo -e "${RED}❌ Missing dependency: $1. Please install it and try again.${NC}"
         exit 1
     fi
+    echo -e "${GREEN}✅ $1 is installed.${NC}"
 }
 
 echo -e "${GREEN}🔍 Checking system requirements...${NC}"
@@ -39,6 +52,8 @@ case $platform in
         ;;
 esac
 
+echo -e "${GREEN}🎉 System requirements met!${NC}"
+
 echo -e "${GREEN}👋 Hi There Iam Mr.Mostafa Sensei! And This Script Will Install ${APP_NAME}...${NC}"
 
 read -p "Continue with installation? (y/n): " answer
@@ -49,6 +64,7 @@ fi
 
 echo -e "${GREEN}🔧 Building $APP_NAME...${NC}"
 go build -ldflags "-X 'github.com/mostafasensei106/gopix/cmd.Version=1.0.0'" -o "$BIN_NAME"
+echo -e "${GREEN}✅ $BIN_NAME built successfully!${NC}"
 
 echo -e "${GREEN}📦 Installing to $INSTALL_DIR...${NC}"
 mkdir -p "$INSTALL_DIR"
@@ -69,3 +85,4 @@ if [[ ":$PATH:" != *":$INSTALL_DIR:"* ]]; then
 fi
 
 echo -e "${GREEN}🎉 Installation complete! Try running:${NC} $BIN_NAME --help"
+echo -e "${GREEN}Have a nice day!${NC}"

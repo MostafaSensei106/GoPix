@@ -6,7 +6,7 @@ $InstallDir = "$env:USERPROFILE\.bin"
 $osName = [System.Runtime.InteropServices.RuntimeInformation]::OSDescription
 $GoRequired = $true
 
-Write-Host "🖥️ Detected OS: $osName"
+Write-Host "🖥️ Detected OS Is $osName..."
 
 if ($osName -notlike "*Windows*") {
     Write-Host "❌ Unsupported OS: $osName" -ForegroundColor Red
@@ -39,7 +39,9 @@ if (-Not (Test-Path $InstallDir)) {
 }
 
 Write-Host "🔧 Building $AppName..." -ForegroundColor Cyan
-go build -ldflags "-X 'imgconvert/cmd.Version=1.0.0'" -o $BinaryName
+go build -ldflags "-X 'GoPix/cmd.Version=1.0.0'" -o $BinaryName
+
+write-host "🎉 $AppName built successfully."
 
 Write-Host "📦 Installing to $InstallDir..." -ForegroundColor Cyan
 Move-Item -Force $BinaryName "$InstallDir\$BinaryName"
@@ -56,3 +58,4 @@ if ($InstallDir -notin $pathList) {
 
 Write-Host "`n🎉 $AppName installed successfully!"
 Write-Host "👉 Run with: ${AppName} --help"
+Write-Host "Have a nice day!"
