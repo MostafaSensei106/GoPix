@@ -2,8 +2,8 @@
 
 set -e
 
-APP_NAME="imgconvert"
-BIN_NAME="imgconvert"
+APP_NAME="GoPix"
+BIN_NAME="GoPix"
 INSTALL_DIR="$HOME/.local/bin"
 os_name=$(uname -s)
 
@@ -11,12 +11,21 @@ GREEN='\033[0;32m'
 RED='\033[0;31m'
 NC='\033[0m'
 
-echo "🖥️ Detected OS Is $os_name..."
+if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+  echo -e "${GREEN}Usage:${NC}"
+  echo -e "${GREEN}  $0 [options]${NC}"
+  echo -e "${GREEN}Options:${NC}"
+  echo -e "${GREEN}  -h, --help${NC}   Show this help message"
+  echo -e "${GREEN}  -r, --remove${NC} Remove $BIN_NAME from $INSTALL_DIR"
+  exit 0
+fi
+
+echo -e "${GREEN}🖥️  Detected OS Is $os_name...${NC}"
 if [[ "$os_name" != "Linux" && "$os_name" != "Darwin" ]]; then
   echo -e "${RED}❌ Unsupported OS: $os_name${NC}"
   exit 1
 fi
-
+echo -e "${GREEN}✅ Your OS is supported${NC}"
 
 if [[ "$1" == "-r" || "$1" == "--remove" ]]; then
   echo "🧹 Uninstalling $APP_NAME from $INSTALL_DIR ..."
@@ -24,10 +33,17 @@ if [[ "$1" == "-r" || "$1" == "--remove" ]]; then
     rm -f "$INSTALL_DIR/$BIN_NAME"
     echo "✅ Removed $BIN_NAME"
   else
-    echo "⚠️ $BIN_NAME not found in $INSTALL_DIR"
+    echo "⚠️ $BIN_NAME is not installed in $INSTALL_DIR"
   fi
   exit 0
 fi
+
+if [[ -f "$INSTALL_DIR/$BIN_NAME" ]]; then
+  echo -e "${GREEN}✅ $BIN_NAME is already installed in $INSTALL_DIR${NC}"
+  exit 0
+fi
+
+
 
 check_dependency() {
     if ! command -v "$1" &> /dev/null; then
@@ -37,8 +53,7 @@ check_dependency() {
     echo -e "${GREEN}✅ $1 is installed.${NC}"
 }
 
-echo -e "${GREEN}🔍 Checking system requirements...${NC}"
-check_dependency "go"
+
 
 platform=$(uname -s | tr '[:upper:]' '[:lower:]')
 arch=$(uname -m)
@@ -52,15 +67,16 @@ case $platform in
         ;;
 esac
 
-echo -e "${GREEN}🎉 System requirements met!${NC}"
-
-echo -e "${GREEN}👋 Hi There Iam Mr.Mostafa Sensei! And This Script Will Install ${APP_NAME}...${NC}"
+echo -e "${GREEN}👋 Hi there! I'm Mr. Mostafa Sensei, and this script will install ${APP_NAME} for you.${NC}"
 
 read -p "Continue with installation? (y/n): " answer
 if [[ "$answer" != "y" && "$answer" != "Y" ]]; then
     echo -e "${RED}❌ Installation cancelled.${NC}"
     exit 0
 fi
+
+echo -e "${GREEN}🔍 Checking system requirements...${NC}"
+check_dependency "go"
 
 echo -e "${GREEN}🔧 Building $APP_NAME...${NC}"
 go build -ldflags "-X 'github.com/mostafasensei106/gopix/cmd.Version=1.0.0'" -o "$BIN_NAME"
