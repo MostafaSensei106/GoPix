@@ -18,6 +18,9 @@ if [[ "$1" == "-h" || "$1" == "--help" ]]; then
   echo -e "${GREEN}  -h, --help${NC}   Show this help message"
   echo -e "${GREEN}  -r, --remove${NC} Remove $BIN_NAME from $INSTALL_DIR"
   exit 0
+else
+  echo "Unknown option or no option provided. Use -h or --help for usage."
+  exit 1
 fi
 
 echo -e "${GREEN}🖥️  Detected OS Is $os_name...${NC}"

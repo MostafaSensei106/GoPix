@@ -21,7 +21,7 @@ var (
 	dryRun       bool
 )
 
-var converted, skipped, failed int
+var converted, skipped, failed uint32
 var mu sync.Mutex
 
 var rootCmd = &cobra.Command{
