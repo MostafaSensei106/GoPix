@@ -145,7 +145,7 @@ build_application() {
     # Build with proper flags
     local ldflags="-X 'github.com/mostafasensei106/gopix/cmd.Version=$VERSION' -s -w"
     
-    if go build -ldflags "$ldflags" -o "$BIN_NAME" .; then
+    if go build -x -ldflags "$ldflags" -o "$BIN_NAME" .; then
         log_success "$BIN_NAME built successfully!"
     else
         log_error "Failed to build $BIN_NAME"

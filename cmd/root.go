@@ -26,7 +26,7 @@ var mu sync.Mutex
 
 var rootCmd = &cobra.Command{
 	Use:   "GoPix",
-	Short: "Convert images in a directory to a specific format",
+	Short: "Convert images in a directory to a specific format By MostafaSensei106, Github: https://github.com/MostafaSensei106",
 	Run: func(cmd *cobra.Command, args []string) {
 		if inputDir == "" || !utils.IsSupportedFormat(targetFormat) {
 			color.Red("❌ Invalid arguments. Use -h for help.")
