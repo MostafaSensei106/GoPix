@@ -71,5 +71,6 @@ func Execute() {
 	rootCmd.Flags().BoolVar(&keepOriginal, "keep", false, "Keep original images after conversion")
 	rootCmd.Flags().BoolVar(&dryRun, "dry-run", false, "Preview changes without converting")
 	rootCmd.Version = version
+	rootCmd.Flags().BoolP("update", "u", false, "Update GoPix to the latest version")
 	_ = rootCmd.Execute()
 }
