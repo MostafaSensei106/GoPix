@@ -71,9 +71,19 @@ var rootCmd = &cobra.Command{
 	},
 }
 
+func getSupportedOutputKeys() []string {
+	keys := make([]string, 0, len(utils.SupportedOutput))
+	for k, v := range utils.SupportedOutput {
+		if v {
+			keys = append(keys, k)
+		}
+	}
+	return keys
+}
+
 func Execute() {
 	rootCmd.Flags().StringVarP(&inputDir, "path", "p", "", "Path to the image folder")
-	rootCmd.Flags().StringVarP(&targetFormat, "to", "t", "png", "Target format (png, jpg, jpeg, webp, tiff or avif)")
+	rootCmd.Flags().StringVarP(&targetFormat, "to", "t", "png", "Target format: "+strings.Join(getSupportedOutputKeys(), ", "))
 	rootCmd.Flags().BoolVar(&keepOriginal, "keep", false, "Keep original images after conversion")
 	rootCmd.Flags().BoolVar(&dryRun, "dry-run", false, "Preview changes without converting")
 	rootCmd.Version = version
