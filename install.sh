@@ -33,7 +33,7 @@ if [[ "$1" == "-r" || "$1" == "--remove" ]]; then
     rm -f "$INSTALL_DIR/$BIN_NAME"
     echo "✅ Removed $BIN_NAME"
   else
-    echo "⚠️ $BIN_NAME is not installed in $INSTALL_DIR"
+    echo "⚠️  $BIN_NAME is not installed in $INSTALL_DIR"
   fi
   exit 0
 fi
@@ -87,17 +87,29 @@ mkdir -p "$INSTALL_DIR"
 mv -f "$BIN_NAME" "$INSTALL_DIR/"
 
 if [[ ":$PATH:" != *":$INSTALL_DIR:"* ]]; then
-    SHELL_RC="$HOME/.bashrc"
-    [[ $SHELL == */zsh ]] && SHELL_RC="$HOME/.zshrc"
-    [[ $SHELL == */fish ]] && SHELL_RC="$HOME/.config/fish/config.fish"
+  SHELL_RC=""
+  case "$SHELL" in
+    */bash) SHELL_RC="$HOME/.bashrc" ;;
+    */zsh)  SHELL_RC="$HOME/.zshrc" ;;
+    */fish) SHELL_RC="$HOME/.config/fish/config.fish" ;;
+    *) SHELL_RC="$HOME/.profile" ;;  # fallback
+  esac
 
-    if [[ $SHELL == */fish ]]; then
-        echo "set -x PATH $INSTALL_DIR \$PATH" >> "$SHELL_RC"
-    else
-        echo "export PATH=\"\$PATH:$INSTALL_DIR\"" >> "$SHELL_RC"
+  if [[ "$SHELL" == */fish ]]; then
+    # Avoid duplicate
+    if ! grep -q "set -x PATH $INSTALL_DIR" "$SHELL_RC" 2>/dev/null; then
+      echo "set -x PATH $INSTALL_DIR \$PATH" >> "$SHELL_RC"
+      echo -e "${GREEN}📌 Added $INSTALL_DIR to PATH in $SHELL_RC (fish)${NC}"
     fi
+  else
+    # Avoid duplicate
+    if ! grep -q "export PATH=.*$INSTALL_DIR" "$SHELL_RC" 2>/dev/null; then
+      echo "export PATH=\"\$PATH:$INSTALL_DIR\"" >> "$SHELL_RC"
+      echo -e "${GREEN}📌 Added $INSTALL_DIR to PATH in $SHELL_RC${NC}"
+    fi
+  fi
 
-    echo -e "${GREEN}📌 Added $INSTALL_DIR to PATH in $SHELL_RC (restart terminal to apply)${NC}"
+  echo -e "${YELLOW}🔁 Please restart your terminal to apply changes.${NC}"
 fi
 
 echo -e "${GREEN}🎉 Installation complete! Try running:${NC} $BIN_NAME --help"
