@@ -12,6 +12,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var version = "v1.0.1"
+
 var (
 	inputDir     string
 	targetFormat string
@@ -23,13 +25,14 @@ var converted, skipped, failed int
 var mu sync.Mutex
 
 var rootCmd = &cobra.Command{
-	Use:   "imgconvert",
+	Use:   "GoPix",
 	Short: "Convert images in a directory to a specific format",
 	Run: func(cmd *cobra.Command, args []string) {
 		if inputDir == "" || !utils.IsSupportedFormat(targetFormat) {
 			color.Red("❌ Invalid arguments. Use -h for help.")
 			return
 		}
+
 		color.Cyan("🔄 Converting images in: %s", inputDir)
 
 		_ = filepath.Walk(inputDir, func(path string, info os.FileInfo, err error) error {
@@ -64,7 +67,7 @@ var rootCmd = &cobra.Command{
 
 func Execute() {
 	rootCmd.Flags().StringVarP(&inputDir, "path", "p", "", "Path to the image folder")
-	rootCmd.Flags().StringVarP(&targetFormat, "to", "t", "png", "Target format (png, jpg, jpeg, webp)")
+	rootCmd.Flags().StringVarP(&targetFormat, "to", "t", "png", "Target format (png, jpg, jpeg, webp, tiff or avif)")
 	rootCmd.Flags().BoolVar(&keepOriginal, "keep", false, "Keep original images after conversion")
 	rootCmd.Flags().BoolVar(&dryRun, "dry-run", false, "Preview changes without converting")
 	_ = rootCmd.Execute()

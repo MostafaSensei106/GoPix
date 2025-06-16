@@ -43,6 +43,10 @@ func ConvertImage(path, format string, keepOriginal, dryRun bool) error {
 		err = jpeg.Encode(outFile, img, &jpeg.Options{Quality: 100})
 	case "webp":
 		err = webp.Encode(outFile, img, &webp.Options{Lossless: true})
+	case "avif":
+		err = webp.Encode(outFile, img, &webp.Options{Lossless: true})
+	case "tiff":
+		err = webp.Encode(outFile, img, &webp.Options{Lossless: true})
 	default:
 		return fmt.Errorf("unsupported format: %s", format)
 	}
