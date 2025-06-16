@@ -19,6 +19,7 @@ var (
 	targetFormat string
 	keepOriginal bool
 	dryRun       bool
+	upgrade      bool
 )
 
 var converted, skipped, failed uint32
@@ -28,6 +29,11 @@ var rootCmd = &cobra.Command{
 	Use:   "GoPix",
 	Short: "Convert images in a directory to a specific format By MostafaSensei106, Github: https://github.com/MostafaSensei106",
 	Run: func(cmd *cobra.Command, args []string) {
+		if upgrade {
+			utils.UpgradeGoPix(true)
+			return
+		}
+
 		if inputDir == "" || !utils.IsSupportedFormat(targetFormat) {
 			color.Red("❌ Invalid arguments. Use -h for help.")
 			return
@@ -71,6 +77,6 @@ func Execute() {
 	rootCmd.Flags().BoolVar(&keepOriginal, "keep", false, "Keep original images after conversion")
 	rootCmd.Flags().BoolVar(&dryRun, "dry-run", false, "Preview changes without converting")
 	rootCmd.Version = version
-	rootCmd.Flags().BoolP("update", "u", false, "Update GoPix to the latest version")
+	rootCmd.Flags().BoolVar(&upgrade, "upgrade", false, "Upgrade GoPix to the latest version")
 	_ = rootCmd.Execute()
 }
