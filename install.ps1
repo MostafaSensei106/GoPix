@@ -194,7 +194,7 @@ function Build-Application {
         $env:GOARCH = "amd64"
         
         Write-Info "Building for Windows (amd64)..."
-        & go build -ldflags $ldflags -o $Script:BIN_NAME .
+        & go build -x -ldflags $ldflags -o $Script:BIN_NAME .
         
         if ($LASTEXITCODE -ne 0) {
             throw "Go build failed with exit code $LASTEXITCODE"
