@@ -16,21 +16,40 @@ import (
 )
 
 func ConvertImage(path, format string, keepOriginal, dryRun bool) error {
-	file, err := os.Open(path)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	img, _, err := image.Decode(file)
-	if err != nil {
-		return err
+	currentExt := strings.ToLower(strings.TrimPrefix(filepath.Ext(path), "."))
+	if currentExt == format || (currentExt == "jpg" && format == "jpeg") || (currentExt == "jpeg" && format == "jpg") {
+		return nil
 	}
 
 	newPath := strings.TrimSuffix(path, filepath.Ext(path)) + "." + format
 	if dryRun {
 		fmt.Printf("[DRY-RUN] Would convert: %s -> %s\n", path, newPath)
 		return nil
+	}
+	file, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	var img image.Image
+	switch currentExt {
+	case "jpg", "jpeg":
+		img, err = jpeg.Decode(file)
+	case "png":
+		img, err = png.Decode(file)
+	case "webp":
+		img, err = webp.Decode(file)
+	case "bmp":
+		img, err = bmp.Decode(file)
+	case "tiff":
+		img, err = tiff.Decode(file)
+	default:
+		img, _, err = image.Decode(file)
+	}
+
+	if err != nil {
+		return err
 	}
 
 	outFile, err := os.Create(newPath)
@@ -39,17 +58,25 @@ func ConvertImage(path, format string, keepOriginal, dryRun bool) error {
 	}
 	defer outFile.Close()
 
+	// تحسين encode مع إعدادات أسرع
 	switch format {
 	case "png":
-		err = png.Encode(outFile, img)
+		encoder := &png.Encoder{
+			CompressionLevel: png.BestSpeed, // أسرع من Default
+		}
+		err = encoder.Encode(outFile, img)
 	case "jpg", "jpeg":
-		err = jpeg.Encode(outFile, img, &jpeg.Options{Quality: 100})
+		err = jpeg.Encode(outFile, img, &jpeg.Options{Quality: 85}) // جودة أقل = سرعة أكبر
 	case "webp":
-		err = webp.Encode(outFile, img, &webp.Options{Lossless: true, Quality: 100})
-	// case "avif":
-	// 	err = avif.Encode(outFile, img, &avif.Options{Quality: 100})
+		err = webp.Encode(outFile, img, &webp.Options{
+			Lossless: false, // lossy أسرع من lossless
+			Quality:  85,
+		})
 	case "tiff":
-		err = tiff.Encode(outFile, img, &tiff.Options{Compression: 0, Predictor: true})
+		err = tiff.Encode(outFile, img, &tiff.Options{
+			Compression: tiff.LZW, // ضغط أسرع
+			Predictor:   false,
+		})
 	case "bmp":
 		err = bmp.Encode(outFile, img)
 	default:
