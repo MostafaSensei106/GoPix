@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/Kagami/go-avif"
+	// "github.com/Kagami/go-avif"
 	"github.com/chai2010/webp"
 	"golang.org/x/image/bmp"
 	"golang.org/x/image/tiff"
@@ -46,8 +46,8 @@ func ConvertImage(path, format string, keepOriginal, dryRun bool) error {
 		err = jpeg.Encode(outFile, img, &jpeg.Options{Quality: 100})
 	case "webp":
 		err = webp.Encode(outFile, img, &webp.Options{Lossless: true, Quality: 100})
-	case "avif":
-		err = avif.Encode(outFile, img, &avif.Options{Quality: 100})
+	// case "avif":
+	// 	err = avif.Encode(outFile, img, &avif.Options{Quality: 100})
 	case "tiff":
 		err = tiff.Encode(outFile, img, &tiff.Options{Compression: 0, Predictor: true})
 	case "bmp":

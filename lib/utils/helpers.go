@@ -15,10 +15,10 @@ var SupportedOutput = map[string]bool{
 	"jpg":  true,
 	"jpeg": true,
 	"webp": true,
-	"avif": true,
 	"tiff": true,
 	"bmp":  true,
 
+	"avif": false,
 	"heic": false,
 	"heif": false,
 	"ico":  false,
