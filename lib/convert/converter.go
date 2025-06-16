@@ -9,7 +9,10 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/Kagami/go-avif"
 	"github.com/chai2010/webp"
+	"golang.org/x/image/bmp"
+	"golang.org/x/image/tiff"
 )
 
 func ConvertImage(path, format string, keepOriginal, dryRun bool) error {
@@ -44,9 +47,11 @@ func ConvertImage(path, format string, keepOriginal, dryRun bool) error {
 	case "webp":
 		err = webp.Encode(outFile, img, &webp.Options{Lossless: true, Quality: 100})
 	case "avif":
-		err = webp.Encode(outFile, img, &webp.Options{Lossless: true, Quality: 100})
+		err = avif.Encode(outFile, img, &avif.Options{Quality: 100})
 	case "tiff":
-		err = webp.Encode(outFile, img, &webp.Options{Lossless: true, Quality: 100})
+		err = tiff.Encode(outFile, img, &tiff.Options{Compression: 0, Predictor: true})
+	case "bmp":
+		err = bmp.Encode(outFile, img)
 	default:
 		return fmt.Errorf("unsupported format: %s", format)
 	}

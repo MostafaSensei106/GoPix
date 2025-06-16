@@ -15,8 +15,13 @@ var SupportedOutput = map[string]bool{
 	"jpg":  true,
 	"jpeg": true,
 	"webp": true,
-	"tiff": true,
 	"avif": true,
+	"tiff": true,
+	"bmp":  true,
+
+	"heic": false,
+	"heif": false,
+	"ico":  false,
 }
 
 func IsSupportedFormat(format string) bool {
