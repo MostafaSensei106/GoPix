@@ -58,23 +58,22 @@ func ConvertImage(path, format string, keepOriginal, dryRun bool) error {
 	}
 	defer outFile.Close()
 
-	// تحسين encode مع إعدادات أسرع
 	switch format {
 	case "png":
 		encoder := &png.Encoder{
-			CompressionLevel: png.BestSpeed, // أسرع من Default
+			CompressionLevel: png.BestSpeed,
 		}
 		err = encoder.Encode(outFile, img)
 	case "jpg", "jpeg":
-		err = jpeg.Encode(outFile, img, &jpeg.Options{Quality: 85}) // جودة أقل = سرعة أكبر
+		err = jpeg.Encode(outFile, img, &jpeg.Options{Quality: 85})
 	case "webp":
 		err = webp.Encode(outFile, img, &webp.Options{
-			Lossless: false, // lossy أسرع من lossless
+			Lossless: false,
 			Quality:  85,
 		})
 	case "tiff":
 		err = tiff.Encode(outFile, img, &tiff.Options{
-			Compression: tiff.LZW, // ضغط أسرع
+			Compression: tiff.LZW,
 			Predictor:   false,
 		})
 	case "bmp":
