@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/fatih/color"
-	"github.com/mostafasensei106/gopix/lib/convert"
+	"github.com/mostafasensei106/gopix/lib/internal/converter"
 )
 
 type ConversionStatistics struct {
@@ -46,8 +46,8 @@ func (cs *ConversionStatistics) AddResult(result *converter.ConversionResult){
 	}
 
 	cs.ConvertedFiles++
-	cs.TotalSizeBefore += result.OriginalSize
-	cs.TotalSizeAfter += result.NewSize
+	cs.TotalSizeBefore += uint64(result.OriginalSize)
+	cs.TotalSizeAfter += uint64(result.NewSize)
 
 }
 
