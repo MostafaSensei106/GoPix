@@ -27,8 +27,8 @@ type ConvertOptions struct {
 type ConversionResult struct {
     OriginalPath string
     NewPath      string
-    OriginalSize int64
-    NewSize      int64
+    OriginalSize uint64
+    NewSize      uint64
     Duration     time.Duration
     Error        error
 }
@@ -54,8 +54,7 @@ func (ic *ImageConverter) Convert(path, format string) *ConversionResult {
 
     // Get original file size
     if stat, err := os.Stat(path); err == nil {
-        result.OriginalSize = stat.Size()
-    }
+        result.OriginalSize = uint64(stat.Size())
 
     currentExt := strings.ToLower(strings.TrimPrefix(filepath.Ext(path), "."))
     if currentExt == format || (currentExt == "jpg" && format == "jpeg") || (currentExt == "jpeg" && format == "jpg") {
@@ -100,8 +99,9 @@ func (ic *ImageConverter) Convert(path, format string) *ConversionResult {
     return result
 }
 
+
 func (ic *ImageConverter) convertImage(inputPath, outputPath, format string) error {
-    file, err := os.Open(inputPath)
+    file, err := os.Open(inputPath,
     if err != nil {
         return fmt.Errorf("failed to open file: %v", err)
     }
