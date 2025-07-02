@@ -1,92 +1,308 @@
 package cmd
 
 import (
-	"os"
-	"path/filepath"
-	"strings"
-	"sync"
+    "crypto/rand"
+    "fmt"
+    "os"
+    "path/filepath"
+    "strings"
+    "time"
 
-	"github.com/fatih/color"
-	"github.com/mostafasensei106/gopix/lib/convert"
-	"github.com/mostafasensei106/gopix/lib/utils"
-	"github.com/spf13/cobra"
+    "github.com/fatih/color"
+    "github.com/spf13/cobra"
+
+	"github.com/mostafasensei106/gopix/lib/internal/converter"
+
+	
+
 )
-
-var version = "v1.0.1"
 
 var (
-	inputDir     string
-	targetFormat string
-	keepOriginal bool
-	dryRun       bool
-	upgrade      bool
+    version = "v2.0.0"
+    cfg     *config.Config
+
+    // Command flags
+    inputDir     string
+    targetFormat string
+    keepOriginal bool
+    dryRun       bool
+    verbose      bool
+    workers      int
+    quality      int
+    maxDimension int
+    backup       bool
+    resumeFlag   bool
+    rateLimit    float64
+    logToFile    bool
 )
 
-var converted, skipped, failed uint32
-var mu sync.Mutex
-
 var rootCmd = &cobra.Command{
-	Use:   "GoPix",
-	Short: "Convert images in a directory to a specific format By MostafaSensei106, Github: https://github.com/MostafaSensei106",
-	Run: func(cmd *cobra.Command, args []string) {
-		if upgrade {
-			utils.UpgradeGoPix(true)
-			return
-		}
+    Use:   "gopix",
+    Short: "Advanced image converter with parallel processing and smart features",
+    Long: `GoPix v2.0 - Professional Image Converter
 
-		if inputDir == "" || !utils.IsSupportedFormat(targetFormat) {
-			color.Red("❌ Invalid arguments. Use -h for help.")
-			return
-		}
+A powerful, feature-rich image conversion tool with:
+• Parallel processing for maximum performance  
+• Smart resume capability for interrupted operations
+• Comprehensive statistics and progress tracking
+• Automatic backup and validation
+• Configurable quality and size optimization
+• Support for multiple formats: PNG, JPEG, WebP, TIFF, BMP
 
-		color.Cyan("🔄 Converting images in: %s", inputDir)
+Created by MostafaSensei106
+GitHub: https://github.com/MostafaSensei106/GoPix`,
+    
+    PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+        // Load configuration
+        var err error
+        cfg, err = config.LoadConfig()
+        if err != nil {
+            return fmt.Errorf("failed to load config: %v", err)
+        }
 
-		_ = filepath.Walk(inputDir, func(path string, info os.FileInfo, err error) error {
-			if err != nil || info.IsDir() {
-				return nil
-			}
+        // Initialize logger
+        logLevel := cfg.LogLevel
+        if verbose {
+            logLevel = "debug"
+        }
+        return logger.Initialize(logLevel, logToFile)
+    },
 
-			ext := strings.ToLower(strings.TrimPrefix(filepath.Ext(info.Name()), "."))
-			if ext == targetFormat {
-				mu.Lock()
-				skipped++
-				mu.Unlock()
-				return nil
-			}
+    RunE: func(cmd *cobra.Command, args []string) error {
+        // Check for resume flag
+        if resumeFlag {
+            return handleResume()
+        }
 
-			err = convert.ConvertImage(path, targetFormat, keepOriginal, dryRun)
-			mu.Lock()
-			if err != nil {
-				color.Red("[FAIL] %s (%v)", path, err)
-				failed++
-			} else {
-				color.Green("[OK] %s", path)
-				converted++
-			}
-			mu.Unlock()
-			return nil
-		})
+        // Apply config defaults if not set via flags
+        if workers == 0 {
+            workers = cfg.Workers
+        }
+        if quality == 0 {
+            quality = cfg.Quality
+        }
+        if maxDimension == 0 {
+            maxDimension = cfg.MaxDimension
+        }
+        if targetFormat == "" {
+            targetFormat = cfg.DefaultFormat
+        }
 
-		color.Cyan("\n✅ Converted: %d | ⏭️ Skipped: %d | ❌ Failed: %d", converted, skipped, failed)
-	},
+        // Validate inputs
+        if err := validator.ValidateInputs(inputDir, targetFormat, cfg.Extensions); err != nil {
+            return err
+        }
+
+        logger.Logger.Infof("Starting conversion: %s -> %s", inputDir, targetFormat)
+        
+        return runConversion()
+    },
 }
 
-func getSupportedOutputKeys() []string {
-	keys := make([]string, 0, len(utils.SupportedOutput))
-	for k, v := range utils.SupportedOutput {
-		if v {
-			keys = append(keys, k)
-		}
-	}
-	return keys
+func runConversion() error {
+    // Collect all image files
+    files, err := collectImageFiles(inputDir)
+    if err != nil {
+        return fmt.Errorf("failed to collect files: %v", err)
+    }
+
+    if len(files) == 0 {
+        color.Yellow("⚠️  No supported image files found in: %s", inputDir)
+        return nil
+    }
+
+    color.Cyan("🔍 Found %d image files to process", len(files))
+
+    // Setup conversion state for resume capability
+    sessionID := generateSessionID()
+    conversionState := &resume.ConversionState{
+        ProcessedFiles: []string{},
+        StartTime:      time.Now(),
+        InputDir:       inputDir,
+        TargetFormat:   targetFormat,
+        TotalFiles:     len(files),
+        SessionID:      sessionID,
+    }
+
+    if cfg.ResumeEnabled {
+        if err := resume.SaveState(conversionState); err != nil {
+            logger.Logger.Warnf("Failed to save initial state: %v", err)
+        }
+    }
+
+    // Setup converter
+    converterOptions := converter.ConvertOptions{
+        Quality:      quality,
+        MaxDimension: maxDimension,
+        KeepOriginal: keepOriginal,
+        DryRun:       dryRun,
+        Backup:       backup,
+    }
+    imageConverter := converter.NewImageConverter(converterOptions)
+
+    // Setup worker pool
+    pool := worker.NewWorkerPool(workers, imageConverter, rateLimit)
+    
+    // Setup progress tracking
+    progressReporter := progress.NewProgressReporter(len(files), "Converting images")
+    statistics := stats.NewConversionStats()
+
+    // Start processing
+    pool.Start()
+    defer pool.Stop()
+
+    // Send jobs to worker pool
+    go func() {
+        for _, file := range files {
+            pool.AddJob(worker.Job{
+                Path:   file,
+                Format: targetFormat,
+            })
+        }
+    }()
+
+    // Process results
+    processedCount := 0
+    for processedCount < len(files) {
+        select {
+        case result := <-pool.Results():
+            processedCount++
+            
+            // Update statistics
+            statistics.AddResult(result)
+            
+            // Update progress
+            if result.Error != nil {
+                progressReporter.UpdateWithMessage(1, fmt.Sprintf("❌ %s", filepath.Base(result.OriginalPath)))
+                logger.Logger.Errorf("Conversion failed: %s - %v", result.OriginalPath, result.Error)
+            } else if result.NewSize == 0 {
+                progressReporter.UpdateWithMessage(1, fmt.Sprintf("⏭️  %s", filepath.Base(result.OriginalPath)))
+            } else {
+                progressReporter.UpdateWithMessage(1, fmt.Sprintf("✅ %s", filepath.Base(result.OriginalPath)))
+                logger.Logger.Infof("Converted: %s -> %s", result.OriginalPath, result.NewPath)
+            }
+
+            // Update resume state
+            if cfg.ResumeEnabled {
+                conversionState.ProcessedFiles = append(conversionState.ProcessedFiles, result.OriginalPath)
+                if err := resume.SaveState(conversionState); err != nil {
+                    logger.Logger.Warnf("Failed to update state: %v", err)
+                }
+            }
+
+        case <-time.After(30 * time.Second):
+            logger.Logger.Warn("Processing timeout, continuing...")
+        }
+    }
+
+    // Finish progress reporting
+    progressReporter.Finish()
+
+    // Print final statistics
+    statistics.PrintReport()
+
+    // Clear resume state on successful completion
+    if cfg.ResumeEnabled {
+        if err := resume.ClearState(); err != nil {
+            logger.Logger.Warnf("Failed to clear state: %v", err)
+        }
+    }
+
+    logger.Logger.Info("Conversion completed successfully")
+    return nil
+}
+
+func handleResume() error {
+    state, err := resume.LoadState()
+    if err != nil {
+        return fmt.Errorf("failed to load resume state: %v", err)
+    }
+
+    if state == nil {
+        color.Yellow("⚠️  No previous conversion session found to resume")
+        return nil
+    }
+
+    color.Cyan("🔄 Resuming conversion session from %v", state.StartTime.Format("2006-01-02 15:04:05"))
+    color.Cyan("📁 Input directory: %s", state.InputDir)
+    color.Cyan("🎯 Target format: %s", state.TargetFormat)
+    color.Cyan("📊 Progress: %d/%d files processed", len(state.ProcessedFiles), state.TotalFiles)
+
+    // Set variables from saved state
+    inputDir = state.InputDir
+    targetFormat = state.TargetFormat
+
+    // Continue with normal conversion (it will skip already processed files)
+    return runConversion()
+}
+
+func collectImageFiles(dir string) ([]string, error) {
+    var files []string
+    
+    err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+        if err != nil {
+            return err
+        }
+
+        if info.IsDir() {
+            return nil
+        }
+
+        // Validate file path for security
+        if err := validator.ValidateFilePath(path); err != nil {
+            logger.Logger.Warnf("Skipping invalid path: %s", path)
+            return nil
+        }
+
+        ext := strings.ToLower(strings.TrimPrefix(filepath.Ext(info.Name()), "."))
+        for _, supportedExt := range cfg.Extensions {
+            if ext == supportedExt {
+                files = append(files, path)
+                break
+            }
+        }
+
+        return nil
+    })
+
+    return files, err
+}
+
+func generateSessionID() string {
+    bytes := make([]byte, 8)
+    rand.Read(bytes)
+    return fmt.Sprintf("%x", bytes)
 }
 
 func Execute() {
-	rootCmd.Flags().StringVarP(&inputDir, "path", "p", "", "Path to the image folder")
-	rootCmd.Flags().StringVarP(&targetFormat, "to", "t", "png", "Target format: "+strings.Join(getSupportedOutputKeys(), ", "))
-	rootCmd.Flags().BoolVar(&keepOriginal, "keep", false, "Keep original images after conversion")
-	rootCmd.Flags().BoolVar(&dryRun, "dry-run", false, "Preview changes without converting")
-	rootCmd.Version = version
-	rootCmd.Flags().BoolVar(&upgrade, "upgrade", false, "Upgrade GoPix to the latest version")
-	_ = rootCmd.Execute()
+    if err := rootCmd.Execute(); err != nil {
+        color.Red("❌ Error: %v", err)
+        os.Exit(1)
+    }
+}
+
+func init() {
+    // Input/Output flags
+    rootCmd.Flags().StringVarP(&inputDir, "path", "p", "", "Path to the image folder (required)")
+    rootCmd.Flags().StringVarP(&targetFormat, "to", "t", "", "Target format (png, jpg, jpeg, webp, tiff, bmp)")
+    rootCmd.Flags().BoolVar(&keepOriginal, "keep", false, "Keep original images after conversion")
+    rootCmd.Flags().BoolVar(&dryRun, "dry-run", false, "Preview changes without converting")
+
+    // Quality and processing flags
+    rootCmd.Flags().IntVarP(&quality, "quality", "q", 0, "Output quality (1-100, 0=use config default)")
+    rootCmd.Flags().IntVar(&maxDimension, "max-size", 0, "Maximum width/height in pixels (0=no limit)")
+    rootCmd.Flags().IntVarP(&workers, "workers", "w", 0, "Number of parallel workers (0=use config default)")
+    rootCmd.Flags().Float64Var(&rateLimit, "rate-limit", 0, "Operations per second limit (0=no limit)")
+
+    // Feature flags
+    rootCmd.Flags().BoolVar(&backup, "backup", false, "Create backup of original files")
+    rootCmd.Flags().BoolVar(&resumeFlag, "resume", false, "Resume previous interrupted conversion")
+    rootCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Enable verbose logging")
+    rootCmd.Flags().BoolVar(&logToFile, "log-file", false, "Save logs to file")
+
+    // Mark required flags
+    rootCmd.MarkFlagRequired("path")
+
+    // Set version
+    rootCmd.Version = version
 }
