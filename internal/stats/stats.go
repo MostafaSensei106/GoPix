@@ -69,7 +69,7 @@ func (cs *ConversionStatistics) PrintReport() {
 
 	// File statistics
 	color.Green("✅ Converted: %d", cs.ConvertedFiles)
-	color.Yellow("⏭️  Skipped: %d", cs.SkippedFiles)
+	color.Yellow("⏭️ Skipped: %d", cs.SkippedFiles)
 	color.Red("❌ Failed: %d", cs.FailedFiles)
 	color.Cyan("📁 Total processed: %d", cs.TotalFiles)
 
