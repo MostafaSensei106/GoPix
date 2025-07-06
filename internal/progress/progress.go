@@ -51,6 +51,7 @@ func (pr *ProgressReporter) UpdateWithMessage(increment uint32, message string) 
 	return pr.bar.Add(int(increment))
 }
 
+// Finish marks the progress bar as finished and prints the total elapsed time.
 func (pr *ProgressReporter) Finish() {
 	pr.bar.Finish()
 	elapsed := time.Since(pr.startTime)

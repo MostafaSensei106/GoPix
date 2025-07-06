@@ -13,8 +13,7 @@ import (
 
 	"github.com/chai2010/webp"
 	"github.com/nfnt/resize"
-	"golang.org/x/image/bmp"
-	"golang.org/x/image/tiff"
+	//"golang.org/x/image/bmp"
 )
 
 type ConvertOptions struct {
@@ -143,13 +142,8 @@ func (ic *ImageConverter) convertImage(inputPath string, outputPath string, form
 			Lossless: false,
 			Quality:  float32(ic.options.Quality),
 		})
-	case "tiff":
-		err = tiff.Encode(outFile, img, &tiff.Options{
-			Compression: tiff.LZW,
-			Predictor:   false,
-		})
-	case "bmp":
-		err = bmp.Encode(outFile, img)
+	// case "bmp":
+	// 	err = bmp.Encode(outFile, img)
 	default:
 		return fmt.Errorf("unsupported format: %s", format)
 	}

@@ -2,10 +2,11 @@ package stats
 
 import (
 	"fmt"
-	"github.com/fatih/color"
-	"github.com/mostafasensei106/gopix/internal/converter"
 	"strings"
 	"time"
+
+	"github.com/fatih/color"
+	"github.com/mostafasensei106/gopix/internal/converter"
 )
 
 type ConversionStatistics struct {
@@ -72,11 +73,22 @@ func (cs *ConversionStatistics) PrintReport() {
 	color.Red("❌ Failed: %d", cs.FailedFiles)
 	color.Cyan("📁 Total processed: %d", cs.TotalFiles)
 
+	// Time statistics
+	color.Cyan("\n⏱️  Time Analysis")
+	color.Cyan(strings.Repeat("=", 50))
+	color.White("🔄 Total conversion time (sum of all file durations): %v", cs.TotalDuration.Round(time.Millisecond))
+	color.White("📊 Avg. time per file: ~%v (non-parallel)", cs.AverageDuration.Round(time.Millisecond))
+	if cs.ConvertedFiles > 0 {
+		rate := float64(cs.ConvertedFiles) / cs.TotalDuration.Seconds()
+		color.White("⚡ Effective processing speed: %.1f files/sec", rate)
+	}
+
 	// Size statistics
 	if cs.TotalSizeBefore > 0 {
 		color.Cyan("\n💾 Size Analysis")
-		color.White("Original size: %s", formatBytes(int64(cs.TotalSizeBefore)))
-		color.White("New size: %s", formatBytes(int64(cs.TotalSizeAfter)))
+		color.Cyan(strings.Repeat("=", 50))
+		color.White("🗂️ Original total size: %s", formatBytes(int64(cs.TotalSizeBefore)))
+		color.White("🆕 New total size: %s", formatBytes(int64(cs.TotalSizeAfter)))
 
 		if cs.SpaceSaved > 0 {
 			color.Green("💰 Space saved: %s (%.1f%% reduction)",
@@ -87,15 +99,6 @@ func (cs *ConversionStatistics) PrintReport() {
 				formatBytes(-int64(cs.SpaceSaved)),
 				(cs.CompressionRatio-1)*100)
 		}
-	}
-
-	// Time statistics
-	color.Cyan("\n⏱️  Time Analysis")
-	color.White("Total conversion time (sum of all file durations): %v", cs.TotalDuration.Round(time.Millisecond))
-	color.White("Avg single-file processing time: ~%v", cs.AverageDuration.Round(time.Millisecond))
-	if cs.ConvertedFiles > 0 {
-		rate := float64(cs.ConvertedFiles) / cs.TotalDuration.Seconds()
-		color.White("Processing rate: %.1f files/sec", rate)
 	}
 
 	// Failure analysis

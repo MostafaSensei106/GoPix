@@ -30,7 +30,7 @@ func DefaultConfig() *Config {
 		Workers:       uint8(runtime.NumCPU()),
 		MaxDimension:  0,
 		LogLevel:      "info",
-		Extentions:    []string{"png", "jpg", "jpeg", "webp", "bmp", "tiff"},
+		Extentions:    []string{"png", "jpg", "jpeg", "webp"},
 		AutoBackup:    true,
 		ResumeEnabled: true,
 		KeepOriginal:  false,

@@ -54,7 +54,7 @@ A powerful, feature-rich image conversion tool with:
 • Comprehensive statistics and progress tracking
 • Automatic backup and validation
 • Configurable quality and size optimization
-• Support for multiple formats: PNG, JPEG, WebP, TIFF, BMP
+• Support for multiple formats: PNG, JPEG, WebP
 
 Created by MostafaSensei106
 GitHub: https://github.com/MostafaSensei106/GoPix`,
@@ -295,7 +295,7 @@ func Execute() {
 func init() {
     // Input/Output flags
     rootCmd.Flags().StringVarP(&inputDir, "path", "p", "", "Path to the image folder (required)")
-    rootCmd.Flags().StringVarP(&targetFormat, "to", "t", "", "Target format default: png (png, jpg, jpeg, webp, tiff, bmp)")
+    rootCmd.Flags().StringVarP(&targetFormat, "to", "t", "", "Target format default: png (png, jpg, jpeg, webp)")
     rootCmd.Flags().BoolVar(&keepOriginal, "keep", false, "Keep original images after conversion")
     rootCmd.Flags().BoolVar(&dryRun, "dry-run", false, "Preview changes without converting")
 
@@ -303,12 +303,12 @@ func init() {
     rootCmd.Flags().Uint16VarP(&quality, "quality", "q", 0, "Output quality (1-100, default 80)")
     rootCmd.Flags().Uint16Var(&maxDimension, "max-size", 0, "Maximum width/height in pixels default no limit")
     rootCmd.Flags().Uint8VarP(&workers, "workers", "w", 0, "Number of parallel workers Default: Max CPU Cores Available")
-    rootCmd.Flags().Float64Var(&rateLimit, "rate-limit", 0, "Operations per second limit (0=no limit)")
+    rootCmd.Flags().Float64Var(&rateLimit, "rate-limit", 0, "Operations per second limit Default: No limit")
 
     // Feature flags
     rootCmd.Flags().BoolVar(&backup, "backup", false, "Create backup of original files")
     rootCmd.Flags().BoolVar(&resumeFlag, "resume", false, "Resume previous interrupted conversion")
-    rootCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Enable verbose logging")
+   // rootCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Enable verbose logging")
     rootCmd.Flags().BoolVar(&logToFile, "log-file", false, "Save logs to file")
 
     // Mark required flags
