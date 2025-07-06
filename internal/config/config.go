@@ -35,19 +35,19 @@ func DefaultConfig() *Config {
 		ResumeEnabled: true,
 		KeepOriginal:  false,
 		DryRun:        false,
-		Verbose:       false,
+	    // Verbose:       false,
 		OutputSettings: map[string]interface{}{
 			"png": map[string]interface{}{
 				"compression": "best_speed",
 			},
 			"jpg": map[string]interface{}{
-				"quality": 85,
+				"quality": 80,
 			},
 			"jpeg": map[string]interface{}{
-				"quality": 85,
+				"quality": 80,
 			},
 			"webp": map[string]interface{}{
-				"quality":  85,
+				"quality":  80,
 				"lossless": false,
 			},
 		},

@@ -23,7 +23,8 @@ import (
 
 var (
     
-    version = "v1.5.0"
+    Version = "v1.5.0"
+    //BuildTime = time.Now().Format("2006-01-02 3:04:05pm")
     cfg     *config.Config
 
     // Command flags
@@ -315,5 +316,5 @@ func init() {
     rootCmd.MarkFlagRequired("path")
 
     // Set version
-    rootCmd.Version = version
+    rootCmd.Version = Version //+ " (" + BuildTime + ")"
 }
