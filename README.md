@@ -78,20 +78,6 @@ gopix -p ./photos -t jpg -w 8 --rate-limit 5
 # Verbose logging to file
 gopix -p ./photos -t png -v --log-file
 
-# Custom configuration
-gopix config set --format webp --quality 85 --workers 4
-```
-
-### Information and Management
-```bash
-# Analyze directory
-gopix info ./photos
-
-# Show configuration
-gopix config show
-
-# Clean temporary files
-gopix clean all
 ```
 
 ## ⚙️ Configuration
