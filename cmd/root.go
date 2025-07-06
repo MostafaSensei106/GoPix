@@ -23,7 +23,7 @@ import (
 
 var (
     
-    version = "v2.0.0"
+    version = "v1.5.0"
     cfg     *config.Config
 
     // Command flags
