@@ -4,7 +4,7 @@ import (
     "context"
     "sync"
     "golang.org/x/time/rate"
-    "github.com/mostafasensei106/gopix/lib/internal/converter"
+    "github.com/mostafasensei106/gopix/internal/converter"
 )
 
 type Job struct {

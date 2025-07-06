@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/fatih/color"
-	"github.com/mostafasensei106/gopix/lib/internal/converter"
+	"github.com/mostafasensei106/gopix/internal/converter"
 )
 
 type ConversionStatistics struct {
@@ -84,7 +84,7 @@ func (cs *ConversionStatistics) PrintReport() {
             color.Green("💰 Space saved: %s (%.1f%% reduction)", 
                 formatBytes(int64(cs.SpaceSaved)), 
                 (1-cs.CompressionRatio)*100)
-        } else if cs.SpaceSaved < 0 {
+        } else if int64(cs.SpaceSaved) < 0 {
             color.Red("📈 Size increased: %s", formatBytes(-int64(cs.SpaceSaved)))
         }
     }

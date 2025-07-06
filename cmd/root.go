@@ -1,20 +1,20 @@
 package cmd
 
 import (
-    "crypto/rand"
-    "fmt"
-    "os"
-    "path/filepath"
-    "strings"
-    "time"
+	"crypto/rand"
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+	"time"
 
-    "github.com/fatih/color"
-    "github.com/spf13/cobra"
+	"github.com/fatih/color"
+	"github.com/spf13/cobra"
 
-	"github.com/mostafasensei106/gopix/lib/internal/converter"
-
-	
-
+	"github.com/mostafasensei106/gopix/internal/config"
+	"github.com/mostafasensei106/gopix/internal/converter"
+	"github.com/mostafasensei106/gopix/internal/logger"
+    "github.com/mostafasensei106/gopix/internal/worker"
 )
 
 var (
