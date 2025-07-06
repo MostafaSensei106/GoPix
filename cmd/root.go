@@ -12,12 +12,17 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/mostafasensei106/gopix/internal/config"
-	"github.com/mostafasensei106/gopix/internal/converter"
+	"github.com/mostafasensei106/gopix/internal/convert"
 	"github.com/mostafasensei106/gopix/internal/logger"
-    "github.com/mostafasensei106/gopix/internal/worker"
+	"github.com/mostafasensei106/gopix/internal/progress"
+	"github.com/mostafasensei106/gopix/internal/resume"
+	"github.com/mostafasensei106/gopix/internal/stats"
+	"github.com/mostafasensei106/gopix/internal/worker"
+    "github.com/mostafasensei106/gopix/internal/validator"
 )
 
 var (
+    
     version = "v2.0.0"
     cfg     *config.Config
 
@@ -27,13 +32,15 @@ var (
     keepOriginal bool
     dryRun       bool
     verbose      bool
-    workers      int
-    quality      int
-    maxDimension int
+    workers      uint8
+    quality      uint16
+    maxDimension uint16
     backup       bool
     resumeFlag   bool
     rateLimit    float64
     logToFile    bool
+    
+    
 )
 
 var rootCmd = &cobra.Command{
@@ -69,6 +76,7 @@ GitHub: https://github.com/MostafaSensei106/GoPix`,
     },
 
     RunE: func(cmd *cobra.Command, args []string) error {
+
         // Check for resume flag
         if resumeFlag {
             return handleResume()
@@ -89,7 +97,7 @@ GitHub: https://github.com/MostafaSensei106/GoPix`,
         }
 
         // Validate inputs
-        if err := validator.ValidateInputs(inputDir, targetFormat, cfg.Extensions); err != nil {
+        if err := validator.ValidateInputs(inputDir, targetFormat, cfg.Extentions); err != nil {
             return err
         }
 
@@ -100,6 +108,7 @@ GitHub: https://github.com/MostafaSensei106/GoPix`,
 }
 
 func runConversion() error {
+
     // Collect all image files
     files, err := collectImageFiles(inputDir)
     if err != nil {
@@ -138,14 +147,15 @@ func runConversion() error {
         DryRun:       dryRun,
         Backup:       backup,
     }
+
     imageConverter := converter.NewImageConverter(converterOptions)
 
     // Setup worker pool
     pool := worker.NewWorkerPool(workers, imageConverter, rateLimit)
     
     // Setup progress tracking
-    progressReporter := progress.NewProgressReporter(len(files), "Converting images")
-    statistics := stats.NewConversionStats()
+    progressReporter := progress.NewProgressReporter(uint32(len(files)), "Converting images")
+    statistics := stats.NewConversionStatistics()
 
     // Start processing
     pool.Start()
@@ -212,6 +222,7 @@ func runConversion() error {
     return nil
 }
 
+
 func handleResume() error {
     state, err := resume.LoadState()
     if err != nil {
@@ -255,7 +266,7 @@ func collectImageFiles(dir string) ([]string, error) {
         }
 
         ext := strings.ToLower(strings.TrimPrefix(filepath.Ext(info.Name()), "."))
-        for _, supportedExt := range cfg.Extensions {
+        for _, supportedExt := range cfg.Extentions {
             if ext == supportedExt {
                 files = append(files, path)
                 break
@@ -289,9 +300,9 @@ func init() {
     rootCmd.Flags().BoolVar(&dryRun, "dry-run", false, "Preview changes without converting")
 
     // Quality and processing flags
-    rootCmd.Flags().IntVarP(&quality, "quality", "q", 0, "Output quality (1-100, 0=use config default)")
-    rootCmd.Flags().IntVar(&maxDimension, "max-size", 0, "Maximum width/height in pixels (0=no limit)")
-    rootCmd.Flags().IntVarP(&workers, "workers", "w", 0, "Number of parallel workers (0=use config default)")
+    rootCmd.Flags().Uint16VarP(&quality, "quality", "q", 0, "Output quality (1-100, 0=use config default)")
+    rootCmd.Flags().Uint16Var(&maxDimension, "max-size", 0, "Maximum width/height in pixels (0=no limit)")
+    rootCmd.Flags().Uint8VarP(&workers, "workers", "w", 0, "Number of parallel workers (0=use config default)")
     rootCmd.Flags().Float64Var(&rateLimit, "rate-limit", 0, "Operations per second limit (0=no limit)")
 
     // Feature flags

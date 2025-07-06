@@ -18,12 +18,9 @@ func (e *ValidationError) Error() string {
 	return fmt.Sprintf("%s: %s", e.Field, e.Message)
 }
 
-// ValidetInput validates the input directory and target format.
-// It checks if the input directory is provided, exists, and has read permission.
-// It also verifies if the target format is within the supported formats.
-// Returns a ValidationError if any validation fails, otherwise returns nil.
 
-func ValidetInput(inputDirectory, targetFormat string, supportedFormatschan []string) error {
+
+func ValidateInputs(inputDirectory, targetFormat string, supportedFormatschan []string) error {
 
 	if inputDirectory == "" {
 		return &ValidationError{"inputDir", "input directory is required"}

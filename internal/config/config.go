@@ -10,7 +10,7 @@ import (
 
 type Config struct {
 	DefaultFormat  string                 `yaml:"default_format"`
-	Quality        uint8                  `yaml:"quality"`
+	Quality        uint16                  `yaml:"quality"`
 	Workers        uint8                  `yaml:"workers"`
 	MaxDimension   uint16                 `yaml:"max_dimension"`
 	LogLevel       string                 `yaml:"log_level"`

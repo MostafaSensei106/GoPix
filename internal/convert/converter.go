@@ -18,8 +18,8 @@ import (
 )
 
 type ConvertOptions struct {
-    Quality      int
-    MaxDimension int
+    Quality      uint16
+    MaxDimension uint16
     KeepOriginal bool
     DryRun       bool
     Backup       bool
@@ -116,8 +116,8 @@ func (ic *ImageConverter) convertImage(inputPath, outputPath, format string) err
 
     // Resize if necessary
     if ic.options.MaxDimension > 0 {
-        bounds := img.Bounds()
-        if bounds.Dx() > ic.options.MaxDimension || bounds.Dy() > ic.options.MaxDimension {
+        bounds  := img.Bounds()
+        if bounds.Dx() > int(ic.options.MaxDimension) || bounds.Dy() > int(ic.options.MaxDimension) {
             img = resize.Resize(uint(ic.options.MaxDimension), 0, img, resize.Lanczos3)
         }
     }
@@ -137,7 +137,7 @@ func (ic *ImageConverter) convertImage(inputPath, outputPath, format string) err
         }
         err = encoder.Encode(outFile, img)
     case "jpg", "jpeg":
-        err = jpeg.Encode(outFile, img, &jpeg.Options{Quality: ic.options.Quality})
+        err = jpeg.Encode(outFile, img, &jpeg.Options{Quality: int(ic.options.Quality)})
     case "webp":
         err = webp.Encode(outFile, img, &webp.Options{
             Lossless: false,
