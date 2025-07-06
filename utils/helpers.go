@@ -1,3 +1,6 @@
+// This code is Deprecated
+
+
 package utils
 
 import (
