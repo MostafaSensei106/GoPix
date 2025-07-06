@@ -63,7 +63,7 @@ func (cs *ConversionStatistics) Calculate() {
 func (cs *ConversionStatistics) PrintReport() {
 	cs.Calculate()
 
-	color.Cyan("\n📊 CONVERSION REPORT")
+	color.Cyan("\n📊 Conversion Report")
 	color.Cyan(strings.Repeat("=", 50))
 
 	// File statistics
@@ -74,7 +74,7 @@ func (cs *ConversionStatistics) PrintReport() {
 
 	// Size statistics
 	if cs.TotalSizeBefore > 0 {
-		color.Cyan("\n💾 SIZE ANALYSIS")
+		color.Cyan("\n💾 Size Analysis")
 		color.White("Original size: %s", formatBytes(int64(cs.TotalSizeBefore)))
 		color.White("New size: %s", formatBytes(int64(cs.TotalSizeAfter)))
 
@@ -88,8 +88,8 @@ func (cs *ConversionStatistics) PrintReport() {
 	}
 
 	// Time statistics
-	color.Cyan("\n⏱️  PERFORMANCE")
-	color.White("Total time: %v", cs.TotalDuration.Round(time.Millisecond))
+	color.Cyan("\n⏱️  Time Analysis")
+	color.White("Total conversion time (sum of all file durations): %v", cs.TotalDuration.Round(time.Millisecond))
 	color.White("Average per file: %v", cs.AverageDuration.Round(time.Millisecond))
 	if cs.ConvertedFiles > 0 {
 		rate := float64(cs.ConvertedFiles) / cs.TotalDuration.Seconds()
@@ -98,7 +98,7 @@ func (cs *ConversionStatistics) PrintReport() {
 
 	// Failure analysis
 	if len(cs.FailureReasons) > 0 {
-		color.Red("\n🔍 FAILURE ANALYSIS")
+		color.Red("\n🔍 Failuer Analysis")
 		for reason, count := range cs.FailureReasons {
 			color.Red("  • %s: %d files", reason, count)
 		}

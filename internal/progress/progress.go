@@ -54,7 +54,7 @@ func (pr *ProgressReporter) UpdateWithMessage(increment uint32, message string) 
 func (pr *ProgressReporter) Finish() {
 	pr.bar.Finish()
 	elapsed := time.Since(pr.startTime)
-	fmt.Printf("\n⏱️  Total time: %v\n", elapsed.Round(time.Millisecond))
+	fmt.Printf("\n⏱️  Wall-clock time (actual time from start to finish): %v\n", elapsed.Round(time.Millisecond))
 }
 
 func (pr *ProgressReporter) GetProgress() (uint32, uint32) {

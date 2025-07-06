@@ -45,8 +45,8 @@ var (
 
 var rootCmd = &cobra.Command{
     Use:   "gopix",
-    Short: "Advanced image converter with parallel processing and smart features",
-    Long: `GoPix v2.0 - Professional Image Converter
+    Short: "Advanced image converter with parallel processing write in Go",
+    Long: `GoPix v1.5.0 - Professional Image Converter
 
 A powerful, feature-rich image conversion tool with:
 • Parallel processing for maximum performance  
@@ -295,14 +295,14 @@ func Execute() {
 func init() {
     // Input/Output flags
     rootCmd.Flags().StringVarP(&inputDir, "path", "p", "", "Path to the image folder (required)")
-    rootCmd.Flags().StringVarP(&targetFormat, "to", "t", "", "Target format (png, jpg, jpeg, webp, tiff, bmp)")
+    rootCmd.Flags().StringVarP(&targetFormat, "to", "t", "", "Target format default: png (png, jpg, jpeg, webp, tiff, bmp)")
     rootCmd.Flags().BoolVar(&keepOriginal, "keep", false, "Keep original images after conversion")
     rootCmd.Flags().BoolVar(&dryRun, "dry-run", false, "Preview changes without converting")
 
     // Quality and processing flags
-    rootCmd.Flags().Uint16VarP(&quality, "quality", "q", 0, "Output quality (1-100, 0=use config default)")
-    rootCmd.Flags().Uint16Var(&maxDimension, "max-size", 0, "Maximum width/height in pixels (0=no limit)")
-    rootCmd.Flags().Uint8VarP(&workers, "workers", "w", 0, "Number of parallel workers (0=use config default)")
+    rootCmd.Flags().Uint16VarP(&quality, "quality", "q", 0, "Output quality (1-100, default 80)")
+    rootCmd.Flags().Uint16Var(&maxDimension, "max-size", 0, "Maximum width/height in pixels default no limit")
+    rootCmd.Flags().Uint8VarP(&workers, "workers", "w", 0, "Number of parallel workers Default: Max CPU Cores Available")
     rootCmd.Flags().Float64Var(&rateLimit, "rate-limit", 0, "Operations per second limit (0=no limit)")
 
     // Feature flags
