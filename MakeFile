@@ -80,7 +80,7 @@ endif
         build-all cross-compile
 
 help: ## Show this help message
-	@echo "$(APP_NAME) Enhanced Installer v2.0.0"
+	@echo "$(APP_NAME) Installer v1.5.0"
 	@echo "Author: Mr. Mostafa Sensei"
 	@echo ""
 	@echo "Usage: make [target] [BUILD_MODE=debug|release]"
