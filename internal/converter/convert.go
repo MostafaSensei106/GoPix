@@ -5,6 +5,7 @@ import (
 	"image"
 	"image/jpeg"
 	"image/png"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -41,7 +42,7 @@ func NewImageConverter(options ConvertOptions) *ImageConverter {
 	return &ImageConverter{options: options}
 }
 
-func (ic *ImageConverter) Convert(path, format string) *ConversionResult {
+func (ic *ImageConverter) Convert(path string, format string) *ConversionResult {
 	start := time.Now()
 	result := &ConversionResult{
 		OriginalPath: path,
@@ -100,7 +101,7 @@ func (ic *ImageConverter) Convert(path, format string) *ConversionResult {
 	return result
 }
 
-func (ic *ImageConverter) convertImage(inputPath, outputPath, format string) error {
+func (ic *ImageConverter) convertImage(inputPath string, outputPath string, format string) error {
 	file, err := os.Open(inputPath)
 	if err != nil {
 		return fmt.Errorf("failed to open file: %v", err)
@@ -161,16 +162,42 @@ func (ic *ImageConverter) convertImage(inputPath, outputPath, format string) err
 }
 
 func (ic *ImageConverter) createBackup(path string) error {
-	backupDir := filepath.Join(filepath.Dir(path), ".gopix_backup")
+	backupDir := filepath.Join(filepath.Dir(path), "backup")
 	if err := os.MkdirAll(backupDir, 0755); err != nil {
-		return err
+		return fmt.Errorf("failed to create backup directory: %v", err)
 	}
 
-	backupPath := filepath.Join(backupDir, filepath.Base(path))
-	input, err := os.ReadFile(path)
+	backupFileName := fmt.Sprintf("%s.bak", filepath.Base(path))
+	backupPath := filepath.Join(backupDir, backupFileName)
+
+	if err := copyFileAtomic(path, backupPath); err != nil {
+		return fmt.Errorf("failed to copy file content: %w", err)
+	}
+
+	return nil
+}
+
+func copyFileAtomic(src string, dst string) error {
+	srcFile, err := os.Open(src)
 	if err != nil {
 		return err
 	}
+	defer srcFile.Close()
 
-	return os.WriteFile(backupPath, input, 0644)
+	tmpFile, err := os.CreateTemp(filepath.Dir(dst), filepath.Base(dst)+".")
+	if err != nil {
+		return err
+	}
+	defer os.Remove(tmpFile.Name())
+	defer tmpFile.Close()
+
+	if _, err := io.Copy(tmpFile, srcFile); err != nil {
+		return err
+	}
+
+	if err := tmpFile.Sync(); err != nil {
+		return err
+	}
+
+	return os.Rename(tmpFile.Name(), dst)
 }

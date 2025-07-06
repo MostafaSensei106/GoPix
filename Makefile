@@ -23,16 +23,6 @@ else ifeq ($(UNAME_S),Darwin)
     GO_OS := darwin
     INSTALL_DIR := /usr/local/bin
     CONFIG_DIR := $(HOME)/Library/Application\ Support/$(APP_NAME)
-else ifeq ($(OS),Windows_NT)
-    GO_OS := windows
-    INSTALL_DIR := $(USERPROFILE)/.local/bin
-    CONFIG_DIR := $(APPDATA)/$(APP_NAME)
-else ifeq ($(UNAME_S),FreeBSD)
-    GO_OS := freebsd
-    INSTALL_DIR := $(HOME)/.local/bin
-else ifeq ($(UNAME_S),OpenBSD)
-    GO_OS := openbsd
-    INSTALL_DIR := $(HOME)/.local/bin
 else
     GO_OS := unknown
 endif

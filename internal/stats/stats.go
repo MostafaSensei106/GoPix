@@ -17,7 +17,7 @@ type ConversionStatistics struct {
 	TotalSizeAfter   uint64
 	TotalDuration    time.Duration
 	AverageDuration  time.Duration
-	SpaceSaved       uint64
+	SpaceSaved       int
 	CompressionRatio float64
 	FailureReasons   map[string]uint32
 }
@@ -54,7 +54,7 @@ func (cs *ConversionStatistics) Calculate() {
 		cs.AverageDuration = cs.TotalDuration / time.Duration(cs.TotalFiles)
 	}
 
-	cs.SpaceSaved = cs.TotalSizeBefore - cs.TotalSizeAfter
+	cs.SpaceSaved = int(cs.TotalSizeBefore - cs.TotalSizeAfter)
 	if cs.TotalSizeBefore > 0 {
 		cs.CompressionRatio = float64(cs.TotalSizeAfter) / float64(cs.TotalSizeBefore)
 	}
@@ -82,15 +82,17 @@ func (cs *ConversionStatistics) PrintReport() {
 			color.Green("💰 Space saved: %s (%.1f%% reduction)",
 				formatBytes(int64(cs.SpaceSaved)),
 				(1-cs.CompressionRatio)*100)
-		} else if int64(cs.SpaceSaved) < 0 {
-			color.Red("📈 Size increased: %s", formatBytes(-int64(cs.SpaceSaved)))
+		} else if cs.SpaceSaved < 0 {
+			color.Red("📈 Size increased: %s (%.1f%% increase)",
+				formatBytes(-int64(cs.SpaceSaved)),
+				(cs.CompressionRatio-1)*100)
 		}
 	}
 
 	// Time statistics
 	color.Cyan("\n⏱️  Time Analysis")
 	color.White("Total conversion time (sum of all file durations): %v", cs.TotalDuration.Round(time.Millisecond))
-	color.White("Average per file: %v", cs.AverageDuration.Round(time.Millisecond))
+	color.White("Avg single-file processing time: ~%v", cs.AverageDuration.Round(time.Millisecond))
 	if cs.ConvertedFiles > 0 {
 		rate := float64(cs.ConvertedFiles) / cs.TotalDuration.Seconds()
 		color.White("Processing rate: %.1f files/sec", rate)
