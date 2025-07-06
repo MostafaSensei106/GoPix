@@ -2,11 +2,10 @@ package stats
 
 import (
 	"fmt"
+	"github.com/fatih/color"
+	"github.com/mostafasensei106/gopix/internal/converter"
 	"strings"
 	"time"
-
-	"github.com/fatih/color"
-	"github.com/mostafasensei106/gopix/internal/convert"
 )
 
 type ConversionStatistics struct {
@@ -20,9 +19,8 @@ type ConversionStatistics struct {
 	AverageDuration  time.Duration
 	SpaceSaved       uint64
 	CompressionRatio float64
-	FailureReasons    map[string]uint32
+	FailureReasons   map[string]uint32
 }
-
 
 func NewConversionStatistics() *ConversionStatistics {
 	return &ConversionStatistics{
@@ -30,7 +28,7 @@ func NewConversionStatistics() *ConversionStatistics {
 	}
 }
 
-func (cs *ConversionStatistics) AddResult(result *converter.ConversionResult){
+func (cs *ConversionStatistics) AddResult(result *converter.ConversionResult) {
 	cs.TotalFiles++
 	cs.TotalDuration += result.Duration
 
@@ -52,72 +50,72 @@ func (cs *ConversionStatistics) AddResult(result *converter.ConversionResult){
 }
 
 func (cs *ConversionStatistics) Calculate() {
-    if cs.TotalFiles > 0 {
-        cs.AverageDuration = cs.TotalDuration / time.Duration(cs.TotalFiles)
-    }
+	if cs.TotalFiles > 0 {
+		cs.AverageDuration = cs.TotalDuration / time.Duration(cs.TotalFiles)
+	}
 
-    cs.SpaceSaved = cs.TotalSizeBefore - cs.TotalSizeAfter
-    if cs.TotalSizeBefore > 0 {
-        cs.CompressionRatio = float64(cs.TotalSizeAfter) / float64(cs.TotalSizeBefore)
-    }
+	cs.SpaceSaved = cs.TotalSizeBefore - cs.TotalSizeAfter
+	if cs.TotalSizeBefore > 0 {
+		cs.CompressionRatio = float64(cs.TotalSizeAfter) / float64(cs.TotalSizeBefore)
+	}
 }
 
 func (cs *ConversionStatistics) PrintReport() {
-    cs.Calculate()
+	cs.Calculate()
 
-    color.Cyan("\n📊 CONVERSION REPORT")
-    color.Cyan(strings.Repeat("=", 50))
+	color.Cyan("\n📊 CONVERSION REPORT")
+	color.Cyan(strings.Repeat("=", 50))
 
-    // File statistics
-    color.Green("✅ Converted: %d", cs.ConvertedFiles)
-    color.Yellow("⏭️  Skipped: %d", cs.SkippedFiles)
-    color.Red("❌ Failed: %d", cs.FailedFiles)
-    color.Cyan("📁 Total processed: %d", cs.TotalFiles)
+	// File statistics
+	color.Green("✅ Converted: %d", cs.ConvertedFiles)
+	color.Yellow("⏭️  Skipped: %d", cs.SkippedFiles)
+	color.Red("❌ Failed: %d", cs.FailedFiles)
+	color.Cyan("📁 Total processed: %d", cs.TotalFiles)
 
-    // Size statistics
-    if cs.TotalSizeBefore > 0 {
-        color.Cyan("\n💾 SIZE ANALYSIS")
-        color.White("Original size: %s", formatBytes(int64(cs.TotalSizeBefore)))
-        color.White("New size: %s", formatBytes(int64(cs.TotalSizeAfter)))
-        
-        if cs.SpaceSaved > 0 {
-            color.Green("💰 Space saved: %s (%.1f%% reduction)", 
-                formatBytes(int64(cs.SpaceSaved)), 
-                (1-cs.CompressionRatio)*100)
-        } else if int64(cs.SpaceSaved) < 0 {
-            color.Red("📈 Size increased: %s", formatBytes(-int64(cs.SpaceSaved)))
-        }
-    }
+	// Size statistics
+	if cs.TotalSizeBefore > 0 {
+		color.Cyan("\n💾 SIZE ANALYSIS")
+		color.White("Original size: %s", formatBytes(int64(cs.TotalSizeBefore)))
+		color.White("New size: %s", formatBytes(int64(cs.TotalSizeAfter)))
 
-    // Time statistics
-    color.Cyan("\n⏱️  PERFORMANCE")
-    color.White("Total time: %v", cs.TotalDuration.Round(time.Millisecond))
-    color.White("Average per file: %v", cs.AverageDuration.Round(time.Millisecond))
-    if cs.ConvertedFiles > 0 {
-        rate := float64(cs.ConvertedFiles) / cs.TotalDuration.Seconds()
-        color.White("Processing rate: %.1f files/sec", rate)
-    }
+		if cs.SpaceSaved > 0 {
+			color.Green("💰 Space saved: %s (%.1f%% reduction)",
+				formatBytes(int64(cs.SpaceSaved)),
+				(1-cs.CompressionRatio)*100)
+		} else if int64(cs.SpaceSaved) < 0 {
+			color.Red("📈 Size increased: %s", formatBytes(-int64(cs.SpaceSaved)))
+		}
+	}
 
-    // Failure analysis
-    if len(cs.FailureReasons) > 0 {
-        color.Red("\n🔍 FAILURE ANALYSIS")
-        for reason, count := range cs.FailureReasons {
-            color.Red("  • %s: %d files", reason, count)
-        }
-    }
+	// Time statistics
+	color.Cyan("\n⏱️  PERFORMANCE")
+	color.White("Total time: %v", cs.TotalDuration.Round(time.Millisecond))
+	color.White("Average per file: %v", cs.AverageDuration.Round(time.Millisecond))
+	if cs.ConvertedFiles > 0 {
+		rate := float64(cs.ConvertedFiles) / cs.TotalDuration.Seconds()
+		color.White("Processing rate: %.1f files/sec", rate)
+	}
+
+	// Failure analysis
+	if len(cs.FailureReasons) > 0 {
+		color.Red("\n🔍 FAILURE ANALYSIS")
+		for reason, count := range cs.FailureReasons {
+			color.Red("  • %s: %d files", reason, count)
+		}
+	}
 }
 
 func formatBytes(bytes int64) string {
-    const unit = 1024
-    if bytes < unit {
-        return fmt.Sprintf("%d B", bytes)
-    }
-    
-    div, exp := int64(unit), 0
-    for n := bytes / unit; n >= unit; n /= unit {
-        div *= unit
-        exp++
-    }
-    
-    return fmt.Sprintf("%.1f %cB", float64(bytes)/float64(div), "KMGTPE"[exp])
+	const unit = 1024
+	if bytes < unit {
+		return fmt.Sprintf("%d B", bytes)
+	}
+
+	div, exp := int64(unit), 0
+	for n := bytes / unit; n >= unit; n /= unit {
+		div *= unit
+		exp++
+	}
+
+	return fmt.Sprintf("%.1f %cB", float64(bytes)/float64(div), "KMGTPE"[exp])
 }

@@ -12,13 +12,13 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/mostafasensei106/gopix/internal/config"
-	"github.com/mostafasensei106/gopix/internal/convert"
+	"github.com/mostafasensei106/gopix/internal/converter"
 	"github.com/mostafasensei106/gopix/internal/logger"
 	"github.com/mostafasensei106/gopix/internal/progress"
 	"github.com/mostafasensei106/gopix/internal/resume"
 	"github.com/mostafasensei106/gopix/internal/stats"
+	"github.com/mostafasensei106/gopix/internal/validator"
 	"github.com/mostafasensei106/gopix/internal/worker"
-    "github.com/mostafasensei106/gopix/internal/validator"
 )
 
 var (

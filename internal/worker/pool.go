@@ -4,9 +4,9 @@ import (
 	"context"
 	"golang.org/x/time/rate"
 	"sync"
-    "github.com/mostafasensei106/gopix/internal/convert"
 )
 
+import conv "github.com/mostafasensei106/gopix/internal/converter"
 type Job struct {
 	Path   string
 	Format string
@@ -15,15 +15,15 @@ type Job struct {
 type WorkerPool struct {
 	workers   uint8
 	jobs      chan Job
-	results   chan *converter.ConversionResult
-	converter *converter.ImageConverter
+	results   chan *conv.ConversionResult
+	converter *conv.ImageConverter
 	limiter   *rate.Limiter
 	ctx       context.Context
 	cancel    context.CancelFunc
 	wg        sync.WaitGroup
 }
 
-func NewWorkerPool(workers uint8, converter *converter.ImageConverter, rateLimit float64) *WorkerPool {
+func NewWorkerPool(workers uint8, converter *conv.ImageConverter, rateLimit float64) *WorkerPool {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	var limiter *rate.Limiter
@@ -34,7 +34,7 @@ func NewWorkerPool(workers uint8, converter *converter.ImageConverter, rateLimit
 	return &WorkerPool{
 		workers:   workers,
 		jobs:      make(chan Job, workers*2),
-		results:   make(chan *converter.ConversionResult, workers*2),
+		results:   make(chan *conv.ConversionResult, workers*2),
 		converter: converter,
 		limiter:   limiter,
 		ctx:       ctx,
@@ -63,7 +63,7 @@ func (wp *WorkerPool) AddJob(job Job) {
 	}
 }
 
-func (wp *WorkerPool) Results() <-chan *converter.ConversionResult {
+func (wp *WorkerPool) Results() <-chan *conv.ConversionResult {
 	return wp.results
 }
 
