@@ -32,7 +32,7 @@ GoPix empowers developers, designers, and power users with efficient batch image
 ## ✨ Features
 
 ### 🌟 Core Functionality
-- Multi-format support: PNG, JPG, WebP, BMP, TIFF, and more
+- Multi-format support: PNG, JPG, WebP
 - Parallel processing: Uses all CPU cores for maximum speed
 - Real-time progress bar with ETA
 - Smart resume for interrupted conversions
