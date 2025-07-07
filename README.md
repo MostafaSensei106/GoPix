@@ -57,23 +57,59 @@ GoPix empowers developers, designers, and power users with efficient batch image
 
 ## 🛠️ Installation
 
-### 📦 Easy Install (Linux)
+## 📦 Easy Install (Linux / macOS / Windows)
 
-Download the latest binary `gopix` from the [Releases](https://github.com/MostafaSensei106/GoPix/releases) page and move it to:
+> [!IMPORTANT]
+> ```MacOS``` should work (untested) 😃
+> ```Windows``` support is experimental use ``Windows Subsystem for Linux - WSL`` for best compatibility 
+
+
+Download the latest pre-built binary for your platform from the [Releases](https://github.com/MostafaSensei106/GoPix/releases) page.
+
+### 🐧 Linux
 
 ```bash
-/home/$USER/.local/bin/
+# Example for Linux (x86_64)
+wget https://github.com/MostafaSensei106/GoPix/releases/latest/download/gopix-linux-amd64 -O gopix
+chmod +x gopix
+mv gopix ~/.local/bin/
+```
+
+>ℹ️ Make sure `~/.local/bin` is in your `$PATH`.
+
+---
+
+### 🍎 macOS
+
+```bash
+# Example for macOS (untested)
+curl -L https://github.com/MostafaSensei106/GoPix/releases/latest/download/gopix-macos -o gopix
+chmod +x gopix
+mv gopix /usr/local/bin/
+```
+
+> 💡 You might need `sudo` if `/usr/local/bin` is protected.
+
+---
+
+### 🪟 Windows
+
+1. Download `gopix-windows.exe` from the [Releases](https://github.com/MostafaSensei106/GoPix/releases) page.
+2. Move it to a folder like `C:\GoPix\`.
+3. Add that folder to your **System PATH**:
+
+   * Open *System Properties* → *Environment Variables* → *Path* → *Edit* → *Add new*.
+
+Then you can run it from any Command Prompt:
+
+```powershell
+gopix.exe --help
 ```
 
 ### 🧪 Installation Script Makefile (All Platforms: Linux, Windows, macOS)
 
 > [!NOTE]
 > The script may modify environment-specific paths depending on the system.
-
-> [!IMPORTANT]
-> ```MacOS``` should (untested) 😃
-> ```Windows``` support will be added later. 
-
 
 ```bash
 git clone --depth 1 https://github.com/MostafaSensei106/GoPix.git
@@ -84,6 +120,13 @@ make install
 This will install GoPix on your system and place the binary in the appropriate executable path.
 
 ---
+
+### Upgrading
+
+To upgrade GoPix to the latest version, simply run :
+```bash
+gopix upgrade
+```
 
 ## ⚡ Quick Start
 

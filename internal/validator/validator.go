@@ -5,7 +5,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"syscall"
 )
 
 type ValidationError struct {
@@ -58,13 +57,14 @@ func ValidateFilePath(path string) error {
 	}
 	return nil
 }
-func HasSufficientSpace(dir string, requiredBytes int64) bool {
-    var stat syscall.Statfs_t
-    if err := syscall.Statfs(dir, &stat); err != nil {
-        return false
-    }
-    return int64(stat.Bavail)*int64(stat.Bsize) > requiredBytes
-}
+
+// func HasSufficientSpace(dir string, requiredBytes int64) bool {
+//     var stat syscall.Statfs_t
+//     if err := syscall.Statfs(dir, &stat); err != nil {
+//         return false
+//     }
+//     return int64(stat.Bavail)*int64(stat.Bsize) > requiredBytes
+// }
 
 
 // hasReadPermission checks if the specified path can be opened for reading.
