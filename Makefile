@@ -6,7 +6,7 @@ GOARCH ?= $(shell go env GOARCH)
 
 APP_NAME := gopix
 SRC := ./main.go
-OUTPUT_DIR := bin/$(GOOS)_$(GOARCH)
+OUTPUT_DIR := bin/$(GOOS)
 OUTPUT := $(OUTPUT_DIR)/$(APP_NAME)
 
 INSTALL_DIR_LINUX := ~/$USER/.local/bin
