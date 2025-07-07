@@ -1,6 +1,5 @@
 // This code is Deprecated
 
-
 package utils
 
 import (
@@ -11,6 +10,8 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"github.com/fatih/color"
 )
 
 var SupportedOutput = map[string]bool{
@@ -32,11 +33,11 @@ func IsSupportedFormat(format string) bool {
 }
 
 func UpgradeGoPix(isUpgrade bool) {
-	fmt.Println("\033[0;32m🔄 Starting GoPix upgrade...\033[0m")
+	color.Cyan("🔄 Starting GoPix upgrade...")
 
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
-		fmt.Println("\033[0;32m❌ Failed to detect home directory:\033[0m", err)
+		color.Red("❌ Failed to detect home directory: %v", err)
 		return
 	}
 
