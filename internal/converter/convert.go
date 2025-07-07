@@ -13,7 +13,7 @@ import (
 
 	"github.com/chai2010/webp"
 	"github.com/nfnt/resize"
-	//"golang.org/x/image/bmp"
+//	"golang.org/x/image/bmp"
 )
 
 type ConvertOptions struct {
