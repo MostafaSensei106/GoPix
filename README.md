@@ -32,7 +32,7 @@ GoPix empowers developers, designers, and power users with efficient batch image
 ## ✨ Features
 
 ### 🌟 Core Functionality
-- Multi-format support: PNG, JPG, WebP, BMP, TIFF, and more
+- Multi-format support: PNG, JPG, WebP, JPEG
 - Parallel processing: Uses all CPU cores for maximum speed
 - Real-time progress bar with ETA
 - Smart resume for interrupted conversions
@@ -43,7 +43,7 @@ GoPix empowers developers, designers, and power users with efficient batch image
 - Size and resolution limits
 - Configuration profiles with YAML support
 - Dry-run mode to preview changes
-- Automatic backup of originals
+- Backup of originals
 - Rate limiting to prevent system overload
 - Detailed post-process stats and reporting
 
@@ -60,9 +60,8 @@ GoPix empowers developers, designers, and power users with efficient batch image
 ## 📦 Easy Install (Linux / macOS / Windows)
 
 > [!IMPORTANT]
-> ```MacOS``` should work (untested) 😃
-
-
+> macOS users need to build GoPix from source.
+> Currently, there is no pre-built binary availablea for arm64 architecture.
 
 Download the latest pre-built binary for your platform from the [Releases](https://github.com/MostafaSensei106/GoPix/releases) page.
 
@@ -70,8 +69,6 @@ Download the latest pre-built binary for your platform from the [Releases](https
 
 ```bash
 # Example for Linux (x86_64)
-wget https://github.com/MostafaSensei106/GoPix/releases/latest/download/gopix-linux-amd64 -O gopix
-chmod +x gopix
 mv gopix ~/.local/bin/
 ```
 
@@ -83,19 +80,14 @@ mv gopix ~/.local/bin/
 
 ```bash
 # Example for macOS (untested)
-curl -L https://github.com/MostafaSensei106/GoPix/releases/latest/download/gopix-macos -o gopix
-chmod +x gopix
 mv gopix /usr/local/bin/
 ```
-
-> 💡 You might need `sudo` if `/usr/local/bin` is protected.
-
 ---
 
 ### 🪟 Windows
 
 1. Download `gopix.exe` from the [Releases](https://github.com/MostafaSensei106/GoPix/releases) page.
-2. Move it to a folder like `C:\GoPix\`.
+2. Move it to a folder like `C:\GoPix\bin`.
 3. Add that folder to your **System PATH**:
 
    * Open *System Properties* → *Environment Variables* → *Path* → *Edit* → *Add new*.
@@ -103,30 +95,96 @@ mv gopix /usr/local/bin/
 Then you can run it from any Command Prompt:
 
 ```powershell
-gopix.exe --help
+gopix help
+```
+---
+## 🏗️ Build from Source (Linux, Windows, macOS)
+
+> ![📝 Note] 
+> GoPix uses a `Makefile` to build and install the CLI tool.  
+> Make sure you have the `make` utility `Go` and `git`  installed on your system.  
+> The script may adjust environment-specific paths depending on your OS.
+
+---
+
+### 🔧 Step 1: Install `make` (if not already installed)
+
+#### For **Arch Linux** and based distros:
+```bash
+sudo pacman -S base-devel
 ```
 
-### 🧪 Installation Script Makefile (All Platforms: Linux, Windows, macOS)
+#### For **Debian / Ubuntu** and based distros:
+```bash
+sudo apt install build-essential
+```
 
-> [!NOTE]
-> The script may modify environment-specific paths depending on the system.
+#### For **Fedora** and based distros:
+```bash
+sudo dnf install make
+```
+
+#### For **openSUSE** and based distros:
+```bash
+sudo zypper install make
+```
+
+#### For **macOS**:
+```bash
+xcode-select --install
+```
+
+#### For **Windows**:
+- Option 1: Install [MSYS2](https://www.msys2.org/) [recommended]
+- Option 2: Use [Git Bash](https://gitforwindows.org/) and run the following command:
+  ```bash
+  pacman -Syu
+  pacman -S make
+  ```
+
+---
+
+### ⚙️ Step 2: Clone and Build
 
 ```bash
 git clone --depth 1 https://github.com/MostafaSensei106/GoPix.git
 cd GoPix
-make install
+make
 ```
 
-This will install GoPix on your system and place the binary in the appropriate executable path.
+---
+
+### ✅ Result
+
+- This will compile GoPix from source optmized for your os and cpu architecture and install it locally.
+- The binary will be placed in your system's executable path (like `/usr/local/bin` on Linux/macOS).
+- You can now run:
+
+```bash
+gopix help
+```
+
 
 ---
 
 ### Upgrading
 
-To upgrade GoPix to the latest version, simply run :
+> ![📝 Note]
+> To upgrade GoPix, make sure you have the required development tools installed:
+> `go`, `make`, and `git`.
+
+To upgrade GoPix to the latest version, simply run
 ```bash
 gopix upgrade
 ```
+## This will:
+  - Clone or update the latest source from GitHub.
+  - Rebuild the binary using your current platform and       architecture.
+  - Replace the old version automatically.
+
+## OR
+
+  get the latest pre-built binary for your platform from [Releases](https://github.com/MostafaSensei106/GoPix/releases) page and follow <a href="#installation">Installation Instructions</a>.
 
 ## ⚡ Quick Start
 
@@ -143,11 +201,6 @@ gopix -p ./images -t jpg -q 90 --keep
 ```bash
 # Preview changes without applying them
 gopix -p ./images -t webp --dry-run
-```
-
-```bash
-# Resume a previously interrupted conversion job
-gopix --resume
 ```
 
 ---
@@ -202,34 +255,7 @@ All settings can be overridden using CLI flags.
 ### 📚 Prerequisites
 - Go 1.21 or later
 - Git
-
-### 🏗️ Build from Source
-
-To compile the GoPix source code, follow these steps:
-
-1. **Clone the Repository**:  
-   Ensure you have `git` installed and clone the GoPix repository:
-   ```bash
-   git clone --depth https://github.com/MostafaSensei106/GoPix.git
-   cd GoPix
-   ```
-
-2. **Download Dependencies**:  
-   Use the `go mod` command to download all necessary dependencies:
-   ```bash
-   go mod download
-   ```
-
-3. **Build the Application**:  
-   Compile the GoPix application using the `go build` command. This will generate an executable named `gopix`:
-   ```bash
-   go build -o gopix
-   ```
-
-After these steps, the `gopix` binary will be available in your current project directory, ready to be used for image conversion tasks or moved to a different location to use it globally .
-
----
-
+- Make
 
 ## 💻 Technologies Used
 
