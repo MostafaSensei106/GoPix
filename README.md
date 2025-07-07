@@ -61,7 +61,7 @@ GoPix empowers developers, designers, and power users with efficient batch image
 
 > [!IMPORTANT]
 > ```MacOS``` should work (untested) 😃
-> ```Windows``` support is experimental use ``Windows Subsystem for Linux - WSL`` for best compatibility 
+
 
 
 Download the latest pre-built binary for your platform from the [Releases](https://github.com/MostafaSensei106/GoPix/releases) page.
@@ -94,7 +94,7 @@ mv gopix /usr/local/bin/
 
 ### 🪟 Windows
 
-1. Download `gopix-windows.exe` from the [Releases](https://github.com/MostafaSensei106/GoPix/releases) page.
+1. Download `gopix.exe` from the [Releases](https://github.com/MostafaSensei106/GoPix/releases) page.
 2. Move it to a folder like `C:\GoPix\`.
 3. Add that folder to your **System PATH**:
 
