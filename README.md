@@ -100,7 +100,7 @@ gopix help
 ---
 ## 🏗️ Build from Source (Linux, Windows, macOS)
 
-> ![📝 Note] 
+> [!Note] 
 > GoPix uses a `Makefile` to build and install the CLI tool.  
 > Make sure you have the `make` utility `Go` and `git`  installed on your system.  
 > The script may adjust environment-specific paths depending on your OS.
@@ -169,7 +169,7 @@ gopix help
 
 ### Upgrading
 
-> ![📝 Note]
+> [!Note]
 > To upgrade GoPix, make sure you have the required development tools installed:
 > `go`, `make`, and `git`.
 
