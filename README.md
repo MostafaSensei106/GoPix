@@ -67,7 +67,7 @@ Download the latest pre-built binary for your platform from the [Releases](https
 ### 🐧 Linux
 Extract the archive
 ```bash
-tar -xzf gopix-linux-amd64.tar.gz
+tar -xzf gopix-linux-amd64.vX.Y.Z.tar.gz
 ```
 
 Move the binary to the local bin directory
@@ -89,7 +89,7 @@ gopix -v
 
 ### 🪟 Windows
 
-1. Download `gopix-windows-amd64.zip` from the [Releases](https://github.com/MostafaSensei106/GoPix/releases) page.
+1. Download `gopix-windows-amd64-vX.Y.Z.zip` from the [Releases](https://github.com/MostafaSensei106/GoPix/releases) page.
 2. Extract the archive to a folder of your choice.
 3. Move the binary located at `windows/amd64/gopix.exe` to any folder of your choice or `C:\Program Files\GoPix\bin`.
 3. Add that folder to your **System PATH**:
