@@ -11,7 +11,7 @@ OUTPUT := $(OUTPUT_DIR)/$(APP_NAME)
 GoPix_VERSION := $(shell git describe --abbrev=0 --tags)
 
 # declare installation directories
-INSTALL_DIR_LINUX := $(HOME)/.local/bin
+INSTALL_DIR_LINUX := /usr/local/bin
 INSTALL_DIR_WIN := /c/Program\ Files/$(APP_NAME)/bin
 
 .PHONY: all build install clean release help check

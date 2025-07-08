@@ -58,31 +58,47 @@ GoPix empowers developers, designers, and power users with efficient batch image
 ## 📦 Easy Install (Linux / Windows)
 
 > [!IMPORTANT]
-> macOS unsupported at the moment.
+> sudo is required for some installation commands on linux.
+> GoPix Only supports x86_64 architecture.
+> macOS will not be supported in the future.
 
 Download the latest pre-built binary for your platform from the [Releases](https://github.com/MostafaSensei106/GoPix/releases) page.
 
 ### 🐧 Linux
-
+Extract the archive
 ```bash
-# Example for Linux (x86_64)
-mv gopix ~/home/${USER}/.local/bin/
+tar -xzf gopix-linux-amd64.tar.gz
 ```
 
+Move the binary to the local bin directory
+```bash
+sudo mv linux/amd64/gopix /usr/local/bin
+```
+
+If you want to install for a specific user
+```bash
+mv linux/amd64/gopix /home/$USER/.local/bin
+```
+
+Then you can test the tool by running:
+
+```bash
+gopix -v
+```
 ---
 
 ### 🪟 Windows
 
-1. Download `gopix.exe` from the [Releases](https://github.com/MostafaSensei106/GoPix/releases) page.
-2. Move it to a folder like `C:\GoPix\bin`.
+1. Download `gopix-windows-amd64.zip` from the [Releases](https://github.com/MostafaSensei106/GoPix/releases) page.
+2. Extract the archive to a folder of your choice.
+3. Move the binary located at `windows/amd64/gopix.exe` to any folder of your choice or `C:\Program Files\GoPix\bin`.
 3. Add that folder to your **System PATH**:
 
    * Open *System Properties* → *Environment Variables* → *Path* → *Edit* → *Add new*.
 
-Then you can run it from any Command Prompt:
-
+Then you can test the tool by running:
 ```powershell
-gopix help
+gopix -v
 ```
 ---
 
