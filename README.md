@@ -61,7 +61,7 @@ GoPix empowers developers, designers, and power users with efficient batch image
 
 > [!IMPORTANT]
 > macOS users need to build GoPix from source.
-> Currently, there is no pre-built binary availablea for arm64 architecture.
+> Currently, there is no pre-built binary availablea for arm64 architecture (untested).
 
 Download the latest pre-built binary for your platform from the [Releases](https://github.com/MostafaSensei106/GoPix/releases) page.
 
