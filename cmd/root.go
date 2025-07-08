@@ -104,6 +104,15 @@ GitHub: https://github.com/MostafaSensei106/GoPix`,
 	},
 }
 
+// runConversion handles the overall image conversion process. It collects all
+// image files from the specified input directory, sets up the necessary
+// resources such as the image converter and worker pool, and processes each
+// file for conversion. The function supports resuming from previous sessions
+// and updates the conversion state accordingly. It also tracks and reports
+// progress and statistics throughout the process, and handles any errors that
+// occur during conversion. On successful completion, it clears the resume
+// state and logs the overall success of the conversion process.
+
 func runConversion() error {
 
 	// Collect all image files
@@ -219,6 +228,8 @@ func runConversion() error {
 	return nil
 }
 
+// handleResume attempts to load a saved conversion state and, if found, resumes the conversion from where it left off.
+// It will print the saved state details and continue with the normal conversion process.
 func handleResume() error {
 	state, err := resume.LoadState()
 	if err != nil {
@@ -242,6 +253,17 @@ func handleResume() error {
 	// Continue with normal conversion (it will skip already processed files)
 	return runConversion()
 }
+
+// collectImageFiles traverses the specified directory and collects all image files
+// with extensions supported by the application. It validates each file path for
+// security before adding it to the result list.
+// 
+// Parameters:
+//   dir: The directory path to search for image files.
+// 
+// Returns:
+//   A slice of strings containing the file paths of valid image files.
+//   An error if there is an issue accessing the directory or during traversal.
 
 func collectImageFiles(dir string) ([]string, error) {
 	var files []string
@@ -275,6 +297,7 @@ func collectImageFiles(dir string) ([]string, error) {
 	return files, err
 }
 
+// generateSessionID generates a random 8-byte session ID as a hexadecimal string.
 func generateSessionID() string {
 	bytes := make([]byte, 8)
 	rand.Read(bytes)
@@ -287,6 +310,13 @@ func Execute() {
 		os.Exit(1)
 	}
 }
+
+// init initializes the command-line interface by setting up the root command
+// with various flags and configurations. It defines input/output flags such
+// as the image folder path and target format, quality and processing flags
+// like output quality and number of workers, and feature flags for backup
+// and resumption of conversions. The function marks the path flag as required,
+// sets the version template, and adds subcommands like the upgrade command.
 
 func init() {
 	// Input/Output flags

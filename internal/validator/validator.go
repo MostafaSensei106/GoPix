@@ -19,6 +19,11 @@ func (e *ValidationError) Error() string {
 
 
 
+// ValidateInputs validates the input directory and target format.
+//
+// It checks if the input directory exists and has read permission, and if the target format is supported.
+//
+// If any of the checks fail, it returns a ValidationError with the field name and message describing the error.
 func ValidateInputs(inputDirectory, targetFormat string, supportedFormatschan []string) error {
 
 	if inputDirectory == "" {

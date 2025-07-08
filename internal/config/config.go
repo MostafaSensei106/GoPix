@@ -23,6 +23,30 @@ type Config struct {
 	Verbose        bool                   `yaml:"verbose"`
 }
 
+// DefaultConfig returns the default configuration for gopix.
+// The returned configuration is a reasonable set of defaults, but can be overridden
+// by the user through the command line flags or a configuration file.
+//
+// The default configuration is as follows:
+//
+// - Default format: png
+// - Quality: 80
+// - Number of workers: the number of CPUs available
+// - Maximum dimension: 0 (no limit)
+// - Log level: info
+// - Supported extentions: png, jpg, jpeg, webp
+// - Auto backup: true
+// - Resume enabled: true
+// - Keep original: false
+// - Dry run: false
+// - Verbose logging: false
+//
+// The output settings are as follows:
+//
+// - For PNG: use best speed compression
+// - For JPG: use quality 80
+// - For JPEG: use quality 80
+// - For WebP: use quality 80 and lossless compression
 func DefaultConfig() *Config {
 	return &Config{
 		DefaultFormat: "png",
@@ -93,6 +117,10 @@ func LoadConfig() (*Config, error) {
 	}
 	return &conf, nil
 }
+
+// Save writes the current configuration to a YAML file in the user's config directory.
+// It marshals the Config struct to YAML format and saves it as "config.yaml".
+// If the marshaling or file writing fails, it returns an error detailing the failure.
 
 func (c *Config) Save() error {
 	configDirctory := getConfigDirectory()
