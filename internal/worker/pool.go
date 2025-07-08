@@ -23,6 +23,12 @@ type WorkerPool struct {
 	wg        sync.WaitGroup
 }
 
+// NewWorkerPool creates a new WorkerPool with the specified number of workers,
+// an ImageConverter for handling image conversion jobs, and an optional rate
+// limit to control the processing rate. The function initializes a context with
+// cancellation, sets up job and result channels, and configures rate limiting
+// if a positive rateLimit is provided.
+
 func NewWorkerPool(workers uint8, converter *conv.ImageConverter, rateLimit float64) *WorkerPool {
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -42,12 +48,23 @@ func NewWorkerPool(workers uint8, converter *conv.ImageConverter, rateLimit floa
 	}
 }
 
+// Start initializes the worker pool by spawning the specified number of
+// worker goroutines. Each worker will process jobs from the job channel
+// until the channel is closed or the context is cancelled. This function
+// should be called before adding jobs to ensure workers are ready to process.
+
 func (wp *WorkerPool) Start() {
 	for i := uint8(0); i < wp.workers; i++ {
 		wp.wg.Add(1)
 		go wp.worker()
 	}
 }
+
+// Stop gracefully shuts down the worker pool by closing the job channel,
+// waiting for all ongoing tasks to complete, and then closing the results
+// channel. It also cancels the context, signaling that no further processing
+// should occur. This ensures that all resources are released properly and
+// no new jobs are processed.
 
 func (wp *WorkerPool) Stop() {
 	close(wp.jobs)
@@ -56,6 +73,7 @@ func (wp *WorkerPool) Stop() {
 	wp.cancel()
 }
 
+// AddJob adds a job to the job channel. If the context is cancelled, it will not add the job and return immediately.
 func (wp *WorkerPool) AddJob(job Job) {
 	select {
 	case wp.jobs <- job:
@@ -63,9 +81,18 @@ func (wp *WorkerPool) AddJob(job Job) {
 	}
 }
 
+// Results returns a receive-only channel of ConversionResult pointers.
+// This channel provides the results of processed jobs. It can be used
+// to retrieve conversion results as they become available.
+
 func (wp *WorkerPool) Results() <-chan *conv.ConversionResult {
 	return wp.results
 }
+
+// worker is a goroutine function that continuously processes jobs from the job channel.
+// It applies rate limiting if a limiter is configured and handles job cancellations gracefully.
+// Upon processing each job, it sends the conversion result to the results channel.
+// The function exits when the job channel is closed or the context is cancelled.
 
 func (wp *WorkerPool) worker() {
 	defer wp.wg.Done()

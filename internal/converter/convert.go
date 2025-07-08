@@ -37,10 +37,32 @@ type ImageConverter struct {
 	options ConvertOptions
 }
 
+// NewImageConverter returns a new ImageConverter instance with the given ConvertOptions.
+//
+// The ImageConverter is used to convert images from one format to another,
+// with optional resizing and quality control.
 func NewImageConverter(options ConvertOptions) *ImageConverter {
 	return &ImageConverter{options: options}
 }
 
+// Convert converts the image at the given path to the given format.
+//
+// The converted image is saved at a new path with the same directory and
+// filename as the original, but with the new extension.
+//
+// If the image is already in the target format, an error is returned.
+//
+// If dryRun is true, the file is not actually converted, but the rest of
+// the logic is still executed.
+//
+// If backup is true, a backup of the original file is created before
+// conversion in a directory named "backup" in the same directory as the
+// original file.
+//
+// If keepOriginal is false, the original file is removed after conversion.
+//
+// The result includes the original and new file sizes, the duration of the
+// conversion, and any error that occurred during conversion.
 func (ic *ImageConverter) Convert(path string, format string) *ConversionResult {
 	start := time.Now()
 	result := &ConversionResult{
@@ -100,6 +122,13 @@ func (ic *ImageConverter) Convert(path string, format string) *ConversionResult 
 	return result
 }
 
+// convertImage converts the image at the given path to the given format and saves it
+// at the given output path. If the image is already in the target format, an error
+// is returned. If dryRun is true, the file is not actually converted, but the rest of
+// the logic is still executed. If backup is true, a backup of the original file is
+// created before conversion in a directory named "backup" in the same directory as
+// the original file. If keepOriginal is false, the original file is removed after
+// conversion.
 func (ic *ImageConverter) convertImage(inputPath string, outputPath string, format string) error {
 	file, err := os.Open(inputPath)
 	if err != nil {
@@ -155,6 +184,10 @@ func (ic *ImageConverter) convertImage(inputPath string, outputPath string, form
 	return nil
 }
 
+// createBackup creates a backup of the specified file in a directory named "backup"
+// in the same directory as the original file. The backup filename is the same as
+// the original file with a ".bak" extension. If the backup directory does not exist,
+// it is created. If the backup file already exists, it is overwritten.
 func (ic *ImageConverter) createBackup(path string) error {
 	backupDir := filepath.Join(filepath.Dir(path), "backup")
 	if err := os.MkdirAll(backupDir, 0755); err != nil {
@@ -171,6 +204,13 @@ func (ic *ImageConverter) createBackup(path string) error {
 	return nil
 }
 
+// copyFileAtomic atomically copies the contents of the file at src to the file at dst.
+// The copy is done in three steps:
+// 1. The contents of the source file are copied to a temporary file.
+// 2. The temporary file is synced to disk.
+// 3. The temporary file is renamed to the destination file.
+// If any error occurs during the copy process, the temporary file is removed and the
+// error is returned.
 func copyFileAtomic(src string, dst string) error {
 	srcFile, err := os.Open(src)
 	if err != nil {

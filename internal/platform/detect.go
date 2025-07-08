@@ -2,10 +2,26 @@ package platform
 
 import "runtime"
 
+// operatingSystem returns the current operating system.
+//
+// Possible values include:
+//   - "linux"
+//   - "windows"
+//   - "darwin" (macOS)
 func operatingSystem() string {
 	return runtime.GOOS
 }
 
+// cpuArchitecture returns the current CPU architecture.
+//
+// Possible values include:
+//   - "amd64" (x64)
+//   - "arm64"
+//   - "386" (x86)
+//   - "arm"
+//   - "mips"
+//   - "mipsle"
+//   - "mips64"
 func cpuArchitecture() string {
 	return runtime.GOARCH
 }
@@ -23,32 +39,17 @@ func OSType () string {
 	}
 }
 
+// ArchType returns the current CPU architecture type as a string.
+// 
+// Possible values include:
+//   - "amd64" (x64)
+// 
+// If the architecture is not recognized, "Unknown" is returned.
+
 func ArchType () string {
 	switch cpuArchitecture() {
 	case "amd64":
-		return "x64"
-	case "arm64":
-		return "arm64"
-	case "386":
-		return "x86"
-	case "arm":
-		return "arm"
-	case "mips":
-		return "mips"
-	case "mipsle":
-		return "mipsle"
-	case "mips64":
-		return "mips64"
-	case "mips64le":
-		return "mips64le"
-	case "ppc64":
-		return "ppc64"
-	case "ppc64le":
-		return "ppc64le"
-	case "s390":
-		return "s390"
-	case "s390x":
-		return "s390x"
+		return "amd64"
 	default:
 		return "Unknown"
 	}

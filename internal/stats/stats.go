@@ -23,12 +23,17 @@ type ConversionStatistics struct {
 	FailureReasons   map[string]uint32
 }
 
+// NewConversionStatistics creates a new ConversionStatistics instance, with the FailureReasons map initialized to hold conversion error reasons and counts.
 func NewConversionStatistics() *ConversionStatistics {
 	return &ConversionStatistics{
 		FailureReasons: make(map[string]uint32),
 	}
 }
 
+// AddResult increments the total number of files, total duration, and adds the size of the original and new files.
+// If the result contains an error, it increments the failed files count and adds the error to the failure reasons map.
+// If the result indicates that the file was skipped, it increments the skipped files count.
+// Otherwise, it increments the converted files count and adds the original and new file sizes to the total sizes.
 func (cs *ConversionStatistics) AddResult(result *converter.ConversionResult) {
 	cs.TotalFiles++
 	cs.TotalDuration += result.Duration
@@ -50,6 +55,9 @@ func (cs *ConversionStatistics) AddResult(result *converter.ConversionResult) {
 
 }
 
+// Calculate computes the average duration, space saved, and compression ratio from the accumulated
+// conversion results. It should be called after all results have been added to the ConversionStatistics
+// instance.
 func (cs *ConversionStatistics) Calculate() {
 	if cs.TotalFiles > 0 {
 		cs.AverageDuration = cs.TotalDuration / time.Duration(cs.TotalFiles)
@@ -61,6 +69,13 @@ func (cs *ConversionStatistics) Calculate() {
 	}
 }
 
+// PrintReport prints a summary of the conversion statistics to the console.
+// It displays the total number of files processed, the number of converted,
+// skipped, and failed files, the total conversion time, the average time per
+// file, and the effective processing speed. It also displays the original and
+// new total sizes of the files and the space saved (or increased) as a result
+// of the conversion. Finally, it lists the failure reasons and the number of
+// files that failed for each reason.
 func (cs *ConversionStatistics) PrintReport() {
 	cs.Calculate()
 
@@ -109,6 +124,10 @@ func (cs *ConversionStatistics) PrintReport() {
 		}
 	}
 }
+
+// formatBytes converts a size in bytes to a human-readable string using binary prefixes (e.g., KB, MB).
+// It returns the size formatted with one decimal place and the appropriate unit, starting from bytes.
+// For example, 1024 bytes is converted to "1.0 KB". This function supports units up to exabytes (EB).
 
 func formatBytes(bytes int64) string {
 	const unit = 1024
