@@ -12,8 +12,6 @@
   <a href="#about">About</a> •
   <a href="#features">Features</a> •
   <a href="#installation">Installation</a> •
-  <a href="#quick-start">Quick Start</a> •
-  <a href="#usage-examples">Usage</a> •
   <a href="#configuration">Configuration</a> •
   <a href="#technologies">Technologies</a> •
   <a href="#contributing">Contributing</a> •
@@ -22,14 +20,14 @@
 
 ---
 
-## 📌 About
+## About
 
 Welcome to **GoPix** — a blazing-fast image conversion CLI tool built with Go.  
 GoPix empowers developers, designers, and power users with efficient batch image conversions, intelligent file handling, and performance-oriented architecture. Whether you’re processing thousands of photos or optimizing a single folder, GoPix handles it with speed and precision.
 
 ---
 
-## ✨ Features
+## Features
 
 ### 🌟 Core Functionality
 - Multi-format support: PNG, JPG, WebP, JPEG
@@ -55,13 +53,12 @@ GoPix empowers developers, designers, and power users with efficient batch image
 
 ---
 
-## 🛠️ Installation
+## Installation
 
-## 📦 Easy Install (Linux / macOS / Windows)
+## 📦 Easy Install (Linux / Windows)
 
 > [!IMPORTANT]
-> macOS users need to build GoPix from source.
-> Currently, there is no pre-built binary availablea for arm64 architecture (untested).
+> macOS unsupported at the moment.
 
 Download the latest pre-built binary for your platform from the [Releases](https://github.com/MostafaSensei106/GoPix/releases) page.
 
@@ -69,19 +66,9 @@ Download the latest pre-built binary for your platform from the [Releases](https
 
 ```bash
 # Example for Linux (x86_64)
-mv gopix ~/.local/bin/
+mv gopix ~/home/${USER}/.local/bin/
 ```
 
->ℹ️ Make sure `~/.local/bin` is in your `$PATH`.
-
----
-
-### 🍎 macOS
-
-```bash
-# Example for macOS (untested)
-mv gopix /usr/local/bin/
-```
 ---
 
 ### 🪟 Windows
@@ -98,7 +85,8 @@ Then you can run it from any Command Prompt:
 gopix help
 ```
 ---
-## 🏗️ Build from Source (Linux, Windows, macOS)
+
+## 🏗️ Build from Source (Linux, Windows)
 
 > ![📝 Note] 
 > GoPix uses a `Makefile` to build and install the CLI tool.  
@@ -127,11 +115,6 @@ sudo dnf install make
 #### For **openSUSE** and based distros:
 ```bash
 sudo zypper install make
-```
-
-#### For **macOS**:
-```bash
-xcode-select --install
 ```
 
 #### For **Windows**:
@@ -163,11 +146,9 @@ make
 ```bash
 gopix help
 ```
-
-
 ---
 
-### Upgrading
+### 🆙 Upgrading
 
 > ![📝 Note]
 > To upgrade GoPix, make sure you have the required development tools installed:
@@ -186,7 +167,9 @@ gopix upgrade
 
   get the latest pre-built binary for your platform from [Releases](https://github.com/MostafaSensei106/GoPix/releases) page and follow <a href="#installation">Installation Instructions</a>.
 
-## ⚡ Quick Start
+--- 
+
+## 🚀 Quick Start
 
 ```bash
 # Convert all images in a directory to PNG
@@ -225,7 +208,7 @@ gopix -p ./photos -t png -v --log-file
 
 ---
 
-## ⚙️ Configuration
+## Configuration
 
 GoPix uses a YAML config file located at:
 
@@ -250,14 +233,7 @@ All settings can be overridden using CLI flags.
 
 ---
 
-## 🧪 Development
-
-### 📚 Prerequisites
-- Go 1.21 or later
-- Git
-- Make
-
-## 💻 Technologies Used
+## Technologies
 
 | Technology            | Description                                                                 |
 |------------------------|-----------------------------------------------------------------------------|
@@ -270,10 +246,9 @@ All settings can be overridden using CLI flags.
 | 📦 **YAML config**       | [gopkg.in/yaml.v3](https://pkg.go.dev/gopkg.in/yaml.v3) — Config file parser |
 | 📜 **Logrus**            | [sirupsen/logrus](https://github.com/sirupsen/logrus) — Advanced logging framework |
 
-
 ---
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Here’s how to get started:
 
@@ -290,13 +265,12 @@ Contributions are welcome! Here’s how to get started:
 
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the **GPL-3.0 License**.  
 See the [LICENSE](LICENSE) file for full details.
-
----
-
 <p align="center">
   Made with ❤️ by <a href="https://github.com/MostafaSensei106">MostafaSensei106</a>
 </p>
+
+---
