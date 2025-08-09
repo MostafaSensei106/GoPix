@@ -6,7 +6,8 @@ import (
 	"time"
 
 	"github.com/fatih/color"
-	"github.com/mostafasensei106/gopix/internal/converter"
+
+	"github.com/MostafaSensei106/GoPix/internal/converter"
 )
 
 type ConversionStatistics struct {

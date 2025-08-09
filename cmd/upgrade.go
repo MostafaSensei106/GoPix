@@ -1,8 +1,9 @@
 package cmd
 
 import (
-	"github.com/mostafasensei106/gopix/internal/upgrade"
 	"github.com/spf13/cobra"
+
+	"github.com/MostafaSensei106/GoPix/internal/upgrade"
 )
 
 var upgradeCmd = &cobra.Command{

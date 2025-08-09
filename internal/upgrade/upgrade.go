@@ -8,7 +8,8 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
-	"github.com/mostafasensei106/gopix/internal/platform"
+
+	"github.com/MostafaSensei106/GoPix/internal/platform"
 )
 
 const repoURL = "https://github.com/MostafaSensei106/GoPix.git"
@@ -76,10 +77,10 @@ func localRepositoryHash(upgradeDirectory string) string {
 	return ""
 }
 
-// remoteRepositoryHash retrieves the latest commit hash of the remote GoPix 
-// repository from the specified repoURL. It executes the command 
-// "git ls-remote <repoURL> HEAD" and captures the output. If the command 
-// fails, it logs an error and returns an empty string. If successful, it 
+// remoteRepositoryHash retrieves the latest commit hash of the remote GoPix
+// repository from the specified repoURL. It executes the command
+// "git ls-remote <repoURL> HEAD" and captures the output. If the command
+// fails, it logs an error and returns an empty string. If successful, it
 // returns the hash as a string.
 
 func remoteRepositoryHash(repoURL string) string {

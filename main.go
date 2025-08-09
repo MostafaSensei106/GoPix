@@ -1,6 +1,6 @@
 package main
 
-import "github.com/mostafasensei106/gopix/cmd"
+import "github.com/MostafaSensei106/GoPix/cmd"
 
 
 func main() {

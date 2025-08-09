@@ -2,11 +2,12 @@ package worker
 
 import (
 	"context"
-	"golang.org/x/time/rate"
 	"sync"
-)
 
-import conv "github.com/mostafasensei106/gopix/internal/converter"
+	"golang.org/x/time/rate"
+
+	conv "github.com/MostafaSensei106/GoPix/internal/converter"
+)
 type Job struct {
 	Path   string
 	Format string
