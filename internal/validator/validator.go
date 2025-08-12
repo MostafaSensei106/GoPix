@@ -17,8 +17,6 @@ func (e *ValidationError) Error() string {
 	return fmt.Sprintf("%s: %s", e.Field, e.Message)
 }
 
-
-
 // ValidateInputs validates the input directory and target format.
 //
 // It checks if the input directory exists and has read permission, and if the target format is supported.
@@ -70,7 +68,6 @@ func ValidateFilePath(path string) error {
 //     }
 //     return int64(stat.Bavail)*int64(stat.Bsize) > requiredBytes
 // }
-
 
 // hasReadPermission checks if the specified path can be opened for reading.
 // Returns true if the path can be opened, otherwise returns false.

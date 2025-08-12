@@ -11,20 +11,20 @@ import (
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 
-	"github.com/mostafasensei106/gopix/internal/config"
-	"github.com/mostafasensei106/gopix/internal/converter"
-	"github.com/mostafasensei106/gopix/internal/logger"
-	"github.com/mostafasensei106/gopix/internal/progress"
-	"github.com/mostafasensei106/gopix/internal/resume"
-	"github.com/mostafasensei106/gopix/internal/stats"
-	"github.com/mostafasensei106/gopix/internal/validator"
-	"github.com/mostafasensei106/gopix/internal/worker"
+	"github.com/MostafaSensei106/GoPix/internal/config"
+	"github.com/MostafaSensei106/GoPix/internal/converter"
+	"github.com/MostafaSensei106/GoPix/internal/logger"
+	"github.com/MostafaSensei106/GoPix/internal/progress"
+	"github.com/MostafaSensei106/GoPix/internal/resume"
+	"github.com/MostafaSensei106/GoPix/internal/stats"
+	"github.com/MostafaSensei106/GoPix/internal/validator"
+	"github.com/MostafaSensei106/GoPix/internal/worker"
 )
 
 var (
-	Version = "v1.5.0"
-	//BuildTime = time.Now().Format("2006-01-02 3:04:05pm")
-	cfg *config.Config
+	Version   = "v1.5.1"
+	BuildTime = time.Now().Format("2006-01-02 3:04:05pm")
+	cfg       *config.Config
 
 	// Command flags
 	inputDir     string
@@ -44,10 +44,10 @@ var (
 var rootCmd = &cobra.Command{
 	Use:   "gopix",
 	Short: "Advanced image converter with parallel processing write in Go",
-	Long: `GoPix v1.5.0 - Professional Image Converter
+	Long: `GoPix v1.5.1 - Professional Image Converter
 
 A powerful, feature-rich image conversion tool with:
-• Parallel processing for maximum performance  
+• Parallel processing for maximum performance
 • Smart resume capability for interrupted operations
 • Comprehensive statistics and progress tracking
 • Automatic backup and validation
@@ -257,10 +257,10 @@ func handleResume() error {
 // collectImageFiles traverses the specified directory and collects all image files
 // with extensions supported by the application. It validates each file path for
 // security before adding it to the result list.
-// 
+//
 // Parameters:
 //   dir: The directory path to search for image files.
-// 
+//
 // Returns:
 //   A slice of strings containing the file paths of valid image files.
 //   An error if there is an issue accessing the directory or during traversal.
@@ -338,7 +338,7 @@ func init() {
 	rootCmd.Flags().BoolVar(&logToFile, "log-file", false, "Save logs to file")
 
 	// Mark required flags
-	rootCmd.MarkFlagRequired("path") 
+	rootCmd.MarkFlagRequired("path")
 
 	// Set version
 	rootCmd.Version = Version

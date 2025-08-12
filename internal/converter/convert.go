@@ -1,6 +1,9 @@
 package converter
 
 import (
+	"bufio"
+	"crypto/md5"
+	"encoding/hex"
 	"fmt"
 	"image"
 	"image/jpeg"
@@ -8,12 +11,13 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/chai2010/webp"
 	"github.com/nfnt/resize"
-//	"golang.org/x/image/bmp"
+	// "golang.org/x/image/bmp"
 )
 
 type ConvertOptions struct {
@@ -35,6 +39,53 @@ type ConversionResult struct {
 
 type ImageConverter struct {
 	options ConvertOptions
+	// Pre-allocate buffer pool for file operations
+	bufPool *bufferPool
+	// Cache for converted images to avoid reprocessing
+	cache map[string]*cacheEntry
+}
+
+// cacheEntry stores metadata about converted images
+type cacheEntry struct {
+	outputPath   string
+	outputSize   int64
+	lastModified time.Time
+	configHash   string
+}
+
+// bufferPool manages reusable buffers to reduce GC pressure
+type bufferPool struct {
+	ch chan []byte
+}
+
+func newBufferPool(size, capacity int) *bufferPool {
+	bp := &bufferPool{
+		ch: make(chan []byte, capacity),
+	}
+	// Pre-fill pool with buffers
+	for i := 0; i < capacity; i++ {
+		bp.ch <- make([]byte, size)
+	}
+	return bp
+}
+
+func (bp *bufferPool) get() []byte {
+	select {
+	case buf := <-bp.ch:
+		return buf
+	default:
+		return make([]byte, 32*1024) // 32KB default
+	}
+}
+
+func (bp *bufferPool) put(buf []byte) {
+	if cap(buf) >= 32*1024 { // Only reuse reasonably sized buffers
+		select {
+		case bp.ch <- buf[:cap(buf)]:
+		default:
+			// Pool full, let GC handle it
+		}
+	}
 }
 
 // NewImageConverter returns a new ImageConverter instance with the given ConvertOptions.
@@ -42,10 +93,15 @@ type ImageConverter struct {
 // The ImageConverter is used to convert images from one format to another,
 // with optional resizing and quality control.
 func NewImageConverter(options ConvertOptions) *ImageConverter {
-	return &ImageConverter{options: options}
+	return &ImageConverter{
+		options: options,
+		bufPool: newBufferPool(32*1024, 10), // 32KB buffers, pool of 10
+		cache:   make(map[string]*cacheEntry),
+	}
 }
 
 // Convert converts the image at the given path to the given format.
+// Optimized with caching and early dimension checking.
 //
 // The converted image is saved at a new path with the same directory and
 // filename as the original, but with the new extension.
@@ -67,54 +123,90 @@ func (ic *ImageConverter) Convert(path string, format string) *ConversionResult 
 	start := time.Now()
 	result := &ConversionResult{
 		OriginalPath: path,
-		Duration:     0,
 	}
 
 	defer func() {
 		result.Duration = time.Since(start)
 	}()
 
-	// Get original file size
-	if stat, err := os.Stat(path); err == nil {
-		result.OriginalSize = stat.Size()
+	// Get original file info - use more efficient stat
+	stat, err := os.Stat(path)
+	if err != nil {
+		result.Error = fmt.Errorf("failed to stat file: %w", err)
+		return result
 	}
+	result.OriginalSize = stat.Size()
 
-	currentExt := strings.ToLower(strings.TrimPrefix(filepath.Ext(path), "."))
-	if currentExt == format || (currentExt == "jpg" && format == "jpeg") || (currentExt == "jpeg" && format == "jpg") {
+	// Optimize string operations - avoid repeated allocations
+	currentExt := getFileExtension(path)
+	format = strings.ToLower(format)
+
+	if isAlreadyInFormat(currentExt, format) {
 		result.Error = fmt.Errorf("file already in target format")
 		return result
 	}
 
-	newPath := strings.TrimSuffix(path, filepath.Ext(path)) + "." + format
-	result.NewPath = newPath
+	// Pre-calculate new path using string builder for efficiency
+	var pathBuilder strings.Builder
+	basePath := strings.TrimSuffix(path, filepath.Ext(path))
+	pathBuilder.Grow(len(basePath) + len(format) + 1)
+	pathBuilder.WriteString(basePath)
+	pathBuilder.WriteByte('.')
+	pathBuilder.WriteString(format)
+	result.NewPath = pathBuilder.String()
+
+	// Check cache for existing conversion
+	cacheKey := ic.getCacheKey(path, format)
+	if cached, exists := ic.cache[cacheKey]; exists {
+		if ic.isCacheValid(cached, stat.ModTime(), result.NewPath) {
+			result.NewSize = cached.outputSize
+			return result
+		}
+		// Remove invalid cache entry
+		delete(ic.cache, cacheKey)
+	}
 
 	if ic.options.DryRun {
+		// For dry run, still check if conversion is needed using DecodeConfig
+		needsResize, err := ic.checkIfResizeNeeded(path)
+		if err != nil {
+			result.Error = err
+			return result
+		}
+		// Store in result for information (could extend ConversionResult if needed)
+		_ = needsResize // Use the information as needed
 		return result
 	}
 
 	// Create backup if requested
 	if ic.options.Backup {
 		if err := ic.createBackup(path); err != nil {
-			result.Error = fmt.Errorf("backup failed: %v", err)
+			result.Error = fmt.Errorf("backup failed: %w", err)
 			return result
 		}
 	}
 
 	// Convert image
-	if err := ic.convertImage(path, newPath, format); err != nil {
+	if err := ic.convertImageOptimized(path, result.NewPath, format); err != nil {
 		result.Error = err
 		return result
 	}
 
-	// Get new file size
-	if stat, err := os.Stat(newPath); err == nil {
-		result.NewSize = stat.Size()
+	// Get new file size and update cache
+	if newStat, err := os.Stat(result.NewPath); err == nil {
+		result.NewSize = newStat.Size()
+		ic.cache[cacheKey] = &cacheEntry{
+			outputPath:   result.NewPath,
+			outputSize:   result.NewSize,
+			lastModified: stat.ModTime(),
+			configHash:   ic.getConfigHash(),
+		}
 	}
 
 	// Remove original if not keeping
 	if !ic.options.KeepOriginal {
 		if err := os.Remove(path); err != nil {
-			result.Error = fmt.Errorf("failed to remove original: %v", err)
+			result.Error = fmt.Errorf("failed to remove original: %w", err)
 			return result
 		}
 	}
@@ -122,116 +214,256 @@ func (ic *ImageConverter) Convert(path string, format string) *ConversionResult 
 	return result
 }
 
-// convertImage converts the image at the given path to the given format and saves it
-// at the given output path. If the image is already in the target format, an error
-// is returned. If dryRun is true, the file is not actually converted, but the rest of
-// the logic is still executed. If backup is true, a backup of the original file is
-// created before conversion in a directory named "backup" in the same directory as
-// the original file. If keepOriginal is false, the original file is removed after
-// conversion.
-func (ic *ImageConverter) convertImage(inputPath string, outputPath string, format string) error {
+// getFileExtension efficiently extracts and normalizes file extension
+func getFileExtension(path string) string {
+	ext := filepath.Ext(path)
+	if len(ext) > 1 {
+		return strings.ToLower(ext[1:]) // Skip the dot
+	}
+	return ""
+}
+
+// isAlreadyInFormat checks if file is already in target format
+func isAlreadyInFormat(currentExt, targetFormat string) bool {
+	if currentExt == targetFormat {
+		return true
+	}
+	// Handle jpg/jpeg equivalence
+	return (currentExt == "jpg" && targetFormat == "jpeg") ||
+		(currentExt == "jpeg" && targetFormat == "jpg")
+}
+
+// checkIfResizeNeeded uses DecodeConfig to efficiently check dimensions without full decode
+func (ic *ImageConverter) checkIfResizeNeeded(inputPath string) (bool, error) {
+	if ic.options.MaxDimension == 0 {
+		return false, nil
+	}
+
 	file, err := os.Open(inputPath)
 	if err != nil {
-		return fmt.Errorf("failed to open file: %v", err)
+		return false, fmt.Errorf("failed to open file for config: %w", err)
 	}
 	defer file.Close()
 
-	// Decode image
-	img, _, err := image.Decode(file)
+	// Use DecodeConfig for fast dimension checking without loading full image
+	config, _, err := image.DecodeConfig(file)
 	if err != nil {
-		return fmt.Errorf("failed to decode image: %v", err)
+		return false, fmt.Errorf("failed to decode config: %w", err)
 	}
 
-	// Resize if necessary
+	maxDim := int(ic.options.MaxDimension)
+	return config.Width > maxDim || config.Height > maxDim, nil
+}
+
+// getCacheKey generates a unique key for caching based on input path and target format
+func (ic *ImageConverter) getCacheKey(inputPath, format string) string {
+	// Create hash from path, format, and relevant options
+	hasher := md5.New()
+	hasher.Write([]byte(inputPath))
+	hasher.Write([]byte(format))
+	hasher.Write([]byte(ic.getConfigHash()))
+	return hex.EncodeToString(hasher.Sum(nil))
+}
+
+// getConfigHash creates a hash of conversion settings for cache validation
+func (ic *ImageConverter) getConfigHash() string {
+	var configBuilder strings.Builder
+	configBuilder.WriteString(strconv.FormatUint(uint64(ic.options.Quality), 10))
+	configBuilder.WriteByte('_')
+	configBuilder.WriteString(strconv.FormatUint(uint64(ic.options.MaxDimension), 10))
+	return configBuilder.String()
+}
+
+// isCacheValid checks if cached conversion is still valid
+func (ic *ImageConverter) isCacheValid(cached *cacheEntry, sourceModTime time.Time, expectedOutputPath string) bool {
+	// Check if source file is newer than cache
+	if sourceModTime.After(cached.lastModified) {
+		return false
+	}
+
+	// Check if output file still exists
+	if _, err := os.Stat(expectedOutputPath); err != nil {
+		return false
+	}
+
+	// Check if conversion settings changed
+	if cached.configHash != ic.getConfigHash() {
+		return false
+	}
+
+	return true
+}
+
+// convertImageOptimized converts with DecodeConfig optimization and early dimension checking
+func (ic *ImageConverter) convertImageOptimized(inputPath, outputPath, format string) error {
+	file, err := os.Open(inputPath)
+	if err != nil {
+		return fmt.Errorf("failed to open file: %w", err)
+	}
+	defer file.Close()
+
+	// First, check if we need to resize using DecodeConfig (fast)
+	var needsResize bool
+	var originalConfig image.Config
+
 	if ic.options.MaxDimension > 0 {
-		bounds := img.Bounds()
-		if bounds.Dx() > int(ic.options.MaxDimension) || bounds.Dy() > int(ic.options.MaxDimension) {
-			img = resize.Resize(uint(ic.options.MaxDimension), 0, img, resize.Lanczos3)
+		config, _, err := image.DecodeConfig(file)
+		if err != nil {
+			return fmt.Errorf("failed to decode config: %w", err)
+		}
+		originalConfig = config
+		maxDim := int(ic.options.MaxDimension)
+		needsResize = config.Width > maxDim || config.Height > maxDim
+
+		// Reset file pointer for actual decode
+		if _, err := file.Seek(0, 0); err != nil {
+			return fmt.Errorf("failed to seek file: %w", err)
 		}
 	}
 
-	// Create output file
-	outFile, err := os.Create(outputPath)
-	if err != nil {
-		return fmt.Errorf("failed to create output file: %v", err)
-	}
-	defer outFile.Close()
+	// Use buffered reader for better I/O performance
+	bufferedReader := bufio.NewReaderSize(file, 64*1024)
 
-	// Encode based on format
+	// Decode image with format hint for faster decoding
+	img, imgFormat, err := image.Decode(bufferedReader)
+	if err != nil {
+		return fmt.Errorf("failed to decode image (%s): %w", imgFormat, err)
+	}
+
+	// Resize only if needed (we already know from DecodeConfig)
+	if needsResize {
+		// Calculate new dimensions maintaining aspect ratio
+		var newWidth, newHeight uint
+		maxDim := uint(ic.options.MaxDimension)
+
+		if originalConfig.Width > originalConfig.Height {
+			newWidth = maxDim
+			newHeight = 0 // Let resize calculate height
+		} else {
+			newWidth = 0 // Let resize calculate width
+			newHeight = maxDim
+		}
+		img = resize.Resize(newWidth, newHeight, img, resize.Lanczos3)
+	}
+
+	// Create output file with optimized flags
+	outFile, err := os.OpenFile(outputPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+	if err != nil {
+		return fmt.Errorf("failed to create output file: %w", err)
+	}
+	defer func() {
+		if cerr := outFile.Close(); cerr != nil && err == nil {
+			err = fmt.Errorf("failed to close output file: %w", cerr)
+		}
+	}()
+
+	// Use buffered writer for better I/O performance
+	bufferedWriter := bufio.NewWriterSize(outFile, 64*1024)
+	defer func() {
+		if ferr := bufferedWriter.Flush(); ferr != nil && err == nil {
+			err = fmt.Errorf("failed to flush output: %w", ferr)
+		}
+	}()
+
+	// Encode based on format with optimized settings
 	switch format {
 	case "png":
 		encoder := &png.Encoder{
-			CompressionLevel: png.BestSpeed,
+			CompressionLevel: png.BestSpeed, // Faster compression
 		}
-		err = encoder.Encode(outFile, img)
+		err = encoder.Encode(bufferedWriter, img)
 	case "jpg", "jpeg":
-		err = jpeg.Encode(outFile, img, &jpeg.Options{Quality: int(ic.options.Quality)})
+		err = jpeg.Encode(bufferedWriter, img, &jpeg.Options{
+			Quality: int(ic.options.Quality),
+		})
 	case "webp":
-		err = webp.Encode(outFile, img, &webp.Options{
+		err = webp.Encode(bufferedWriter, img, &webp.Options{
 			Lossless: false,
 			Quality:  float32(ic.options.Quality),
 		})
 	// case "bmp":
-	// 	err = bmp.Encode(outFile, img)
+	// 	err = bmp.Encode(bufferedWriter, img)
 	default:
 		return fmt.Errorf("unsupported format: %s", format)
 	}
 
 	if err != nil {
-		return fmt.Errorf("failed to encode image: %v", err)
+		return fmt.Errorf("failed to encode image: %w", err)
 	}
 
 	return nil
 }
 
 // createBackup creates a backup of the specified file in a directory named "backup"
-// in the same directory as the original file. The backup filename is the same as
-// the original file with a ".bak" extension. If the backup directory does not exist,
-// it is created. If the backup file already exists, it is overwritten.
+// in the same directory as the original file. Optimized for performance.
 func (ic *ImageConverter) createBackup(path string) error {
-	backupDir := filepath.Join(filepath.Dir(path), "backup")
+	dir := filepath.Dir(path)
+	backupDir := filepath.Join(dir, "backup")
+
+	// Create backup directory with proper permissions
 	if err := os.MkdirAll(backupDir, 0755); err != nil {
-		return fmt.Errorf("failed to create backup directory: %v", err)
+		return fmt.Errorf("failed to create backup directory: %w", err)
 	}
 
-	backupFileName := fmt.Sprintf("%s.bak", filepath.Base(path))
-	backupPath := filepath.Join(backupDir, backupFileName)
+	// Build backup filename efficiently
+	var filenameBuilder strings.Builder
+	baseName := filepath.Base(path)
+	filenameBuilder.Grow(len(baseName) + 4)
+	filenameBuilder.WriteString(baseName)
+	filenameBuilder.WriteString(".bak")
 
-	if err := copyFileAtomic(path, backupPath); err != nil {
+	backupPath := filepath.Join(backupDir, filenameBuilder.String())
+
+	if err := ic.copyFileOptimized(path, backupPath); err != nil {
 		return fmt.Errorf("failed to copy file content: %w", err)
 	}
 
 	return nil
 }
 
-// copyFileAtomic atomically copies the contents of the file at src to the file at dst.
-// The copy is done in three steps:
-// 1. The contents of the source file are copied to a temporary file.
-// 2. The temporary file is synced to disk.
-// 3. The temporary file is renamed to the destination file.
-// If any error occurs during the copy process, the temporary file is removed and the
-// error is returned.
-func copyFileAtomic(src string, dst string) error {
+// copyFileOptimized performs an optimized atomic file copy using buffer pool
+func (ic *ImageConverter) copyFileOptimized(src, dst string) error {
 	srcFile, err := os.Open(src)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to open source: %w", err)
 	}
 	defer srcFile.Close()
 
-	tmpFile, err := os.CreateTemp(filepath.Dir(dst), filepath.Base(dst)+".")
+	// Create temp file in same directory as destination for atomic rename
+	tmpFile, err := os.CreateTemp(filepath.Dir(dst), ".tmp_"+filepath.Base(dst))
 	if err != nil {
-		return err
-	}
-	defer os.Remove(tmpFile.Name())
-	defer tmpFile.Close()
-
-	if _, err := io.Copy(tmpFile, srcFile); err != nil {
-		return err
+		return fmt.Errorf("failed to create temp file: %w", err)
 	}
 
+	tmpName := tmpFile.Name()
+	defer func() {
+		tmpFile.Close()
+		os.Remove(tmpName) // Clean up on error
+	}()
+
+	// Get buffer from pool
+	buf := ic.bufPool.get()
+	defer ic.bufPool.put(buf)
+
+	// Copy with buffered I/O using our buffer
+	if _, err := io.CopyBuffer(tmpFile, srcFile, buf); err != nil {
+		return fmt.Errorf("failed to copy data: %w", err)
+	}
+
+	// Ensure data is written to disk
 	if err := tmpFile.Sync(); err != nil {
-		return err
+		return fmt.Errorf("failed to sync temp file: %w", err)
 	}
 
-	return os.Rename(tmpFile.Name(), dst)
+	// Close temp file before rename
+	if err := tmpFile.Close(); err != nil {
+		return fmt.Errorf("failed to close temp file: %w", err)
+	}
+
+	// Atomic rename
+	if err := os.Rename(tmpName, dst); err != nil {
+		return fmt.Errorf("failed to rename temp file: %w", err)
+	}
+
+	return nil
 }

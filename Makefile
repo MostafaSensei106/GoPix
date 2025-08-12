@@ -8,7 +8,7 @@ GOARCH ?= $(shell go env GOARCH)
 APP_NAME := gopix
 OUTPUT_DIR := bin/$(GOOS)/$(GOARCH)
 OUTPUT := $(OUTPUT_DIR)/$(APP_NAME)
-GoPix_VERSION := $(shell git describe --abbrev=0 --tags)
+GoPix_VERSION := 1.5.1
 
 # declare installation directories
 INSTALL_DIR_LINUX := /usr/local/bin
@@ -39,7 +39,7 @@ check: deps
 build: check
 	@echo "📦 Building $(APP_NAME) for $(GOOS)/$(GOARCH)..."
 	@mkdir -p $(OUTPUT_DIR)
-	@GOOS=$(GOOS) GOARCH=$(GOARCH) go build -o $(OUTPUT) 
+	@GOOS=$(GOOS) GOARCH=$(GOARCH) go build -o $(OUTPUT)
 	@echo "✅ Build complete: $(OUTPUT)"
 
 install: check build
@@ -76,7 +76,7 @@ release: check
 			fi; \
 			ARCHIVE_NAME=$(APP_NAME)-$$GOOS-$$GOARCH-${GoPix_VERSION}; \
 			mkdir -p $$OUT_DIR; \
-			echo "🛠️ Building for $$GOOS/$$GOARCH..."; \
+			echo "🛠️  Building for $$GOOS/$$GOARCH..."; \
 			if [ "$$GOOS" = "windows" ]; then \
 				if [ "$$HOST_OS" = "windows" ]; then \
 					GOOS=$$GOOS GOARCH=$$GOARCH go build -o $$OUT_FILE || echo "❌ Failed for $$GOOS/$$GOARCH"; \

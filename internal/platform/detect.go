@@ -26,7 +26,7 @@ func cpuArchitecture() string {
 	return runtime.GOARCH
 }
 
-func OSType () string {
+func OSType() string {
 	switch operatingSystem() {
 	case "linux":
 		return "Linux"
@@ -40,13 +40,13 @@ func OSType () string {
 }
 
 // ArchType returns the current CPU architecture type as a string.
-// 
+//
 // Possible values include:
 //   - "amd64" (x64)
-// 
+//
 // If the architecture is not recognized, "Unknown" is returned.
 
-func ArchType () string {
+func ArchType() string {
 	switch cpuArchitecture() {
 	case "amd64":
 		return "amd64"
