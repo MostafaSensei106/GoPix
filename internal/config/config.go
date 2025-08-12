@@ -10,7 +10,7 @@ import (
 
 type Config struct {
 	DefaultFormat  string                 `yaml:"default_format"`
-	Quality        uint16                  `yaml:"quality"`
+	Quality        uint16                 `yaml:"quality"`
 	Workers        uint8                  `yaml:"workers"`
 	MaxDimension   uint16                 `yaml:"max_dimension"`
 	LogLevel       string                 `yaml:"log_level"`
@@ -59,7 +59,7 @@ func DefaultConfig() *Config {
 		ResumeEnabled: true,
 		KeepOriginal:  false,
 		DryRun:        false,
-	    // Verbose:       false,
+		// Verbose:       false,
 		OutputSettings: map[string]interface{}{
 			"png": map[string]interface{}{
 				"compression": "best_speed",

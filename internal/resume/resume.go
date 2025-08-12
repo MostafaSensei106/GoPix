@@ -1,20 +1,19 @@
 package resume
 
-
 import (
-    "encoding/json"
-    "os"
-    "path/filepath"
-    "time"
+	"encoding/json"
+	"os"
+	"path/filepath"
+	"time"
 )
 
 type ConversionState struct {
-    ProcessedFiles []string  `json:"processed_files"`
-    StartTime      time.Time `json:"start_time"`
-    InputDir       string    `json:"input_dir"`
-    TargetFormat   string    `json:"target_format"`
-    TotalFiles     int       `json:"total_files"`
-    SessionID      string    `json:"session_id"`
+	ProcessedFiles []string  `json:"processed_files"`
+	StartTime      time.Time `json:"start_time"`
+	InputDir       string    `json:"input_dir"`
+	TargetFormat   string    `json:"target_format"`
+	TotalFiles     int       `json:"total_files"`
+	SessionID      string    `json:"session_id"`
 }
 
 // SaveState writes the current conversion state to a JSON file in the user's
@@ -27,18 +26,18 @@ type ConversionState struct {
 //
 // If any error occurs during the writing process, the function returns the error.
 func SaveState(state *ConversionState) error {
-    stateDir := getStateDir()
-    if err := os.MkdirAll(stateDir, 0755); err != nil {
-        return err
-    }
+	stateDir := getStateDir()
+	if err := os.MkdirAll(stateDir, 0755); err != nil {
+		return err
+	}
 
-    statePath := filepath.Join(stateDir, "conversion_state.json")
-    data, err := json.MarshalIndent(state, "", "  ")
-    if err != nil {
-        return err
-    }
+	statePath := filepath.Join(stateDir, "conversion_state.json")
+	data, err := json.MarshalIndent(state, "", "  ")
+	if err != nil {
+		return err
+	}
 
-    return os.WriteFile(statePath, data, 0644)
+	return os.WriteFile(statePath, data, 0644)
 }
 
 // LoadState reads the current conversion state from a JSON file in the user's
@@ -49,23 +48,23 @@ func SaveState(state *ConversionState) error {
 // error occurs during the reading or unmarshalling process, the function
 // returns the error.
 func LoadState() (*ConversionState, error) {
-    statePath := filepath.Join(getStateDir(), "conversion_state.json")
-    
-    if _, err := os.Stat(statePath); os.IsNotExist(err) {
-        return nil, nil // No saved state
-    }
+	statePath := filepath.Join(getStateDir(), "conversion_state.json")
 
-    data, err := os.ReadFile(statePath)
-    if err != nil {
-        return nil, err
-    }
+	if _, err := os.Stat(statePath); os.IsNotExist(err) {
+		return nil, nil // No saved state
+	}
 
-    var state ConversionState
-    if err := json.Unmarshal(data, &state); err != nil {
-        return nil, err
-    }
+	data, err := os.ReadFile(statePath)
+	if err != nil {
+		return nil, err
+	}
 
-    return &state, nil
+	var state ConversionState
+	if err := json.Unmarshal(data, &state); err != nil {
+		return nil, err
+	}
+
+	return &state, nil
 }
 
 // ClearState removes the saved conversion state file from the user's state directory.
@@ -76,13 +75,13 @@ func LoadState() (*ConversionState, error) {
 // If the file does not exist, the function returns nil and no error. If any
 // error occurs during the removal process, the function returns the error.
 func ClearState() error {
-    statePath := filepath.Join(getStateDir(), "conversion_state.json")
-    return os.Remove(statePath)
+	statePath := filepath.Join(getStateDir(), "conversion_state.json")
+	return os.Remove(statePath)
 }
 
 // getStateDir returns the path to the state directory where conversion state files are saved.
 // The directory is located in the user's home directory and is named ".gopix/state".
 func getStateDir() string {
-    homeDir, _ := os.UserHomeDir()
-    return filepath.Join(homeDir, ".gopix", "state")
+	homeDir, _ := os.UserHomeDir()
+	return filepath.Join(homeDir, ".gopix", "state")
 }

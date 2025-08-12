@@ -22,7 +22,7 @@
 
 ## About
 
-Welcome to **GoPix** — a blazing-fast image conversion CLI tool built with Go.  
+Welcome to **GoPix** — a blazing-fast image conversion CLI tool built with Go.
 GoPix empowers developers, designers, and power users with efficient batch image conversions, intelligent file handling, and performance-oriented architecture. Whether you’re processing thousands of photos or optimizing a single folder, GoPix handles it with speed and precision.
 
 ---
@@ -104,9 +104,9 @@ gopix -v
 
 ## 🏗️ Build from Source (Linux, Windows)
 
-> ![📝 Note] 
-> GoPix uses a `Makefile` to build and install the CLI tool.  
-> Make sure you have the `make` utility `Go` and `git`  installed on your system.  
+> ![📝 Note]
+> GoPix uses a `Makefile` to build and install the CLI tool.
+> Make sure you have the `make` utility `Go` and `git`  installed on your system.
 > The script may adjust environment-specific paths depending on your OS.
 
 ---
@@ -115,22 +115,22 @@ gopix -v
 
 #### For **Arch Linux** and based distros:
 ```bash
-sudo pacman -S base-devel
+sudo pacman -S base-devel mingw-w64-gcc
 ```
 
 #### For **Debian / Ubuntu** and based distros:
 ```bash
-sudo apt install build-essential
+sudo apt install build-essential gcc-mingw-w64-x86-64
 ```
 
 #### For **Fedora** and based distros:
 ```bash
-sudo dnf install make
+sudo dnf install make mingw64-gcc
 ```
 
 #### For **openSUSE** and based distros:
 ```bash
-sudo zypper install make
+sudo zypper install make mingw64-gcc
 ```
 
 #### For **Windows**:
@@ -183,7 +183,7 @@ gopix upgrade
 
   get the latest pre-built binary for your platform from [Releases](https://github.com/MostafaSensei106/GoPix/releases) page and follow <a href="#installation">Installation Instructions</a>.
 
---- 
+---
 
 ## 🚀 Quick Start
 
@@ -229,7 +229,7 @@ gopix -p ./photos -t png -v --log-file
 GoPix uses a YAML config file located at:
 
 ```bash
-# on Linux 
+# on Linux
 ~/Home/$USER/.gopix/config.yaml
 ```
 
@@ -242,7 +242,7 @@ max_dimension: 4096
 log_level: "info"
 auto_backup: false
 resume_enabled: true
-# supported_extensions: ["jpg", "jpeg", "png", "webp"] # Do not add any formats here, 
+# supported_extensions: ["jpg", "jpeg", "png", "webp"] # Do not add any formats here,
 ```
 
 All settings can be overridden using CLI flags.
@@ -268,13 +268,13 @@ All settings can be overridden using CLI flags.
 
 Contributions are welcome! Here’s how to get started:
 
-1. Fork the repository  
-2. Create a new branch:  
-   `git checkout -b feature/YourFeature`  
-3. Commit your changes:  
-   `git commit -m "Add amazing feature"`  
-4. Push to your branch:  
-   `git push origin feature/YourFeature`  
+1. Fork the repository
+2. Create a new branch:
+   `git checkout -b feature/YourFeature`
+3. Commit your changes:
+   `git commit -m "Add amazing feature"`
+4. Push to your branch:
+   `git push origin feature/YourFeature`
 5. Open a pull request
 
 > 💡 Please open an issue first for major feature ideas or changes.
@@ -283,7 +283,7 @@ Contributions are welcome! Here’s how to get started:
 
 ## License
 
-This project is licensed under the **GPL-3.0 License**.  
+This project is licensed under the **GPL-3.0 License**.
 See the [LICENSE](LICENSE) file for full details.
 <p align="center">
   Made with ❤️ by <a href="https://github.com/MostafaSensei106">MostafaSensei106</a>

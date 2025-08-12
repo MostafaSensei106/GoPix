@@ -8,6 +8,7 @@ import (
 
 	conv "github.com/MostafaSensei106/GoPix/internal/converter"
 )
+
 type Job struct {
 	Path   string
 	Format string

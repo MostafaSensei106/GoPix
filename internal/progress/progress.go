@@ -67,11 +67,13 @@ func (pr *ProgressReporter) Update(increment uint32) error {
 // is updated with the given message.
 //
 // Parameters:
-//   increment - The number of units to increment the progress by.
-//   message - The message to display in the progress bar.
+//
+//	increment - The number of units to increment the progress by.
+//	message - The message to display in the progress bar.
 //
 // Returns:
-//   An error if the progress bar fails to update.
+//
+//	An error if the progress bar fails to update.
 func (pr *ProgressReporter) UpdateWithMessage(increment uint32, message string) error {
 	pr.current += increment
 	pr.bar.Describe(message)
@@ -88,7 +90,8 @@ func (pr *ProgressReporter) Finish() {
 // GetProgress returns the current progress and total number of units.
 //
 // Returns:
-//   A tuple containing the current progress and total number of units.
+//
+//	A tuple containing the current progress and total number of units.
 func (pr *ProgressReporter) GetProgress() (uint32, uint32) {
 	return pr.current, pr.total
 }

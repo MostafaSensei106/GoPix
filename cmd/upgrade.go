@@ -11,6 +11,6 @@ var upgradeCmd = &cobra.Command{
 	Short: "Upgrade GoPix to the latest version",
 	Long:  `Pull the latest changes from GitHub and update GoPix to the latest available version.`,
 	Run: func(cmd *cobra.Command, args []string) {
-	 upgrade.UpgradeGoPix()
+		upgrade.UpgradeGoPix()
 	},
 }
