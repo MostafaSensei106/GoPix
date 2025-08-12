@@ -13,7 +13,7 @@ import (
 
 	"github.com/chai2010/webp"
 	"github.com/nfnt/resize"
-//	"golang.org/x/image/bmp"
+	// "golang.org/x/image/bmp"
 )
 
 type ConvertOptions struct {
@@ -158,7 +158,7 @@ func (ic *ImageConverter) convertImage(inputPath string, outputPath string, form
 	defer outFile.Close()
 
 	// Encode based on format
-	switch format {
+	switch strings.ToLower(format) {
 	case "png":
 		encoder := &png.Encoder{
 			CompressionLevel: png.BestSpeed,
@@ -203,6 +203,30 @@ func (ic *ImageConverter) createBackup(path string) error {
 
 	return nil
 }
+
+// RestoreBackup restores the backup of the specified file in a directory named "backup"
+// in the same directory as the original file. The backup filename is the same as
+// the original file with a ".bak" extension. If the backup directory does not exist,
+// it is created. If the backup file does not exist, an error is returned.
+// func (ic *ImageConverter) restoreBackup(path string) error {
+// 	backupDir := filepath.Join(filepath.Dir(path), "backup")
+// 	if err := os.MkdirAll(backupDir, 0755); err != nil {
+// 		return fmt.Errorf("failed to create backup directory: %v", err)
+// 	}
+
+// 	backupFileName := fmt.Sprintf("%s.bak", filepath.Base(path))
+// 	backupPath := filepath.Join(backupDir, backupFileName)
+
+// 	if _, err := os.Stat(backupPath); os.IsNotExist(err) {
+// 		return fmt.Errorf("backup file does not exist: %v", err)
+// 	}
+
+// 	if err := copyFileAtomic(backupPath, path); err != nil {
+// 		return fmt.Errorf("failed to copy file content: %w", err)
+// 	}
+
+// 	return nil
+// }
 
 // copyFileAtomic atomically copies the contents of the file at src to the file at dst.
 // The copy is done in three steps:
