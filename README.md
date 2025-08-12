@@ -166,7 +166,7 @@ gopix help
 
 ### 🆙 Upgrading
 
-> ![📝 Note]
+> [!Note]
 > To upgrade GoPix, make sure you have the required development tools installed:
 > `go`, `make`, and `git`.
 
