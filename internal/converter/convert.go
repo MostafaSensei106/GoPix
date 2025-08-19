@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/chai2010/webp"
@@ -20,6 +21,7 @@ import (
 	// "golang.org/x/image/bmp"
 )
 
+// ConvertOptions contains the settings for the image conversion process.
 type ConvertOptions struct {
 	Quality      uint16
 	MaxDimension uint16
@@ -28,6 +30,7 @@ type ConvertOptions struct {
 	Backup       bool
 }
 
+// ConversionResult holds the outcome of a single image conversion.
 type ConversionResult struct {
 	OriginalPath string
 	NewPath      string
@@ -37,15 +40,15 @@ type ConversionResult struct {
 	Error        error
 }
 
+// ImageConverter is responsible for converting images.
 type ImageConverter struct {
 	options ConvertOptions
-	// Pre-allocate buffer pool for file operations
 	bufPool *bufferPool
-	// Cache for converted images to avoid reprocessing
-	cache map[string]*cacheEntry
+
+	cache sync.Map
 }
 
-// cacheEntry stores metadata about converted images
+// cacheEntry stores metadata about converted images.
 type cacheEntry struct {
 	outputPath   string
 	outputSize   int64
@@ -53,7 +56,7 @@ type cacheEntry struct {
 	configHash   string
 }
 
-// bufferPool manages reusable buffers to reduce GC pressure
+// bufferPool manages reusable buffers to reduce GC pressure.
 type bufferPool struct {
 	ch chan []byte
 }
@@ -88,37 +91,16 @@ func (bp *bufferPool) put(buf []byte) {
 	}
 }
 
-// NewImageConverter returns a new ImageConverter instance with the given ConvertOptions.
-//
-// The ImageConverter is used to convert images from one format to another,
-// with optional resizing and quality control.
+// NewImageConverter returns a new ImageConverter instance.
 func NewImageConverter(options ConvertOptions) *ImageConverter {
 	return &ImageConverter{
 		options: options,
 		bufPool: newBufferPool(32*1024, 10), // 32KB buffers, pool of 10
-		cache:   make(map[string]*cacheEntry),
+		cache:   sync.Map{},
 	}
 }
 
 // Convert converts the image at the given path to the given format.
-// Optimized with caching and early dimension checking.
-//
-// The converted image is saved at a new path with the same directory and
-// filename as the original, but with the new extension.
-//
-// If the image is already in the target format, an error is returned.
-//
-// If dryRun is true, the file is not actually converted, but the rest of
-// the logic is still executed.
-//
-// If backup is true, a backup of the original file is created before
-// conversion in a directory named "backup" in the same directory as the
-// original file.
-//
-// If keepOriginal is false, the original file is removed after conversion.
-//
-// The result includes the original and new file sizes, the duration of the
-// conversion, and any error that occurred during conversion.
 func (ic *ImageConverter) Convert(path string, format string) *ConversionResult {
 	start := time.Now()
 	result := &ConversionResult{
@@ -155,15 +137,36 @@ func (ic *ImageConverter) Convert(path string, format string) *ConversionResult 
 	pathBuilder.WriteString(format)
 	result.NewPath = pathBuilder.String()
 
-	// Check cache for existing conversion
+	// Check cache for existing conversion using sync.Map's Load method
 	cacheKey := ic.getCacheKey(path, format)
-	if cached, exists := ic.cache[cacheKey]; exists {
-		if ic.isCacheValid(cached, stat.ModTime(), result.NewPath) {
-			result.NewSize = cached.outputSize
-			return result
+	cached, exists := ic.cache.Load(cacheKey)
+
+	if exists {
+		// Type assertion for the cached value
+		cachedEntry, ok := cached.(*cacheEntry)
+		if !ok {
+			// Handle unexpected type, remove invalid entry
+			ic.cache.Delete(cacheKey)
+		} else {
+			if ic.isCacheValid(cachedEntry, stat.ModTime(), result.NewPath) {
+				result.NewSize = cachedEntry.outputSize
+				return result
+			}
+			// Remove invalid cache entry
+			ic.cache.Delete(cacheKey)
 		}
-		// Remove invalid cache entry
-		delete(ic.cache, cacheKey)
+	}
+
+	if newStat, err := os.Stat(result.NewPath); err == nil {
+		result.NewSize = newStat.Size()
+
+		// Store in cache using sync.Map's Store method
+		ic.cache.Store(cacheKey, &cacheEntry{
+			outputPath:   result.NewPath,
+			outputSize:   result.NewSize,
+			lastModified: time.Now(),
+			configHash:   ic.getConfigHash(),
+		})
 	}
 
 	if ic.options.DryRun {
@@ -195,12 +198,14 @@ func (ic *ImageConverter) Convert(path string, format string) *ConversionResult 
 	// Get new file size and update cache
 	if newStat, err := os.Stat(result.NewPath); err == nil {
 		result.NewSize = newStat.Size()
-		ic.cache[cacheKey] = &cacheEntry{
+
+		// Store in cache using sync.Map's Store method
+		ic.cache.Store(cacheKey, &cacheEntry{
 			outputPath:   result.NewPath,
 			outputSize:   result.NewSize,
 			lastModified: stat.ModTime(),
 			configHash:   ic.getConfigHash(),
-		}
+		})
 	}
 
 	// Remove original if not keeping
@@ -214,7 +219,7 @@ func (ic *ImageConverter) Convert(path string, format string) *ConversionResult 
 	return result
 }
 
-// getFileExtension efficiently extracts and normalizes file extension
+// getFileExtension efficiently extracts and normalizes file extension.
 func getFileExtension(path string) string {
 	ext := filepath.Ext(path)
 	if len(ext) > 1 {
@@ -223,7 +228,7 @@ func getFileExtension(path string) string {
 	return ""
 }
 
-// isAlreadyInFormat checks if file is already in target format
+// isAlreadyInFormat checks if file is already in target format.
 func isAlreadyInFormat(currentExt, targetFormat string) bool {
 	if currentExt == targetFormat {
 		return true
@@ -233,7 +238,7 @@ func isAlreadyInFormat(currentExt, targetFormat string) bool {
 		(currentExt == "jpeg" && targetFormat == "jpg")
 }
 
-// checkIfResizeNeeded uses DecodeConfig to efficiently check dimensions without full decode
+// checkIfResizeNeeded uses DecodeConfig to efficiently check dimensions without full decode.
 func (ic *ImageConverter) checkIfResizeNeeded(inputPath string) (bool, error) {
 	if ic.options.MaxDimension == 0 {
 		return false, nil
@@ -255,7 +260,7 @@ func (ic *ImageConverter) checkIfResizeNeeded(inputPath string) (bool, error) {
 	return config.Width > maxDim || config.Height > maxDim, nil
 }
 
-// getCacheKey generates a unique key for caching based on input path and target format
+// getCacheKey generates a unique key for caching based on input path and target format.
 func (ic *ImageConverter) getCacheKey(inputPath, format string) string {
 	// Create hash from path, format, and relevant options
 	hasher := md5.New()
@@ -265,7 +270,7 @@ func (ic *ImageConverter) getCacheKey(inputPath, format string) string {
 	return hex.EncodeToString(hasher.Sum(nil))
 }
 
-// getConfigHash creates a hash of conversion settings for cache validation
+// getConfigHash creates a hash of conversion settings for cache validation.
 func (ic *ImageConverter) getConfigHash() string {
 	var configBuilder strings.Builder
 	configBuilder.WriteString(strconv.FormatUint(uint64(ic.options.Quality), 10))
@@ -274,7 +279,7 @@ func (ic *ImageConverter) getConfigHash() string {
 	return configBuilder.String()
 }
 
-// isCacheValid checks if cached conversion is still valid
+// isCacheValid checks if cached conversion is still valid.
 func (ic *ImageConverter) isCacheValid(cached *cacheEntry, sourceModTime time.Time, expectedOutputPath string) bool {
 	// Check if source file is newer than cache
 	if sourceModTime.After(cached.lastModified) {
@@ -294,7 +299,7 @@ func (ic *ImageConverter) isCacheValid(cached *cacheEntry, sourceModTime time.Ti
 	return true
 }
 
-// convertImageOptimized converts with DecodeConfig optimization and early dimension checking
+// convertImageOptimized converts with DecodeConfig optimization and early dimension checking.
 func (ic *ImageConverter) convertImageOptimized(inputPath, outputPath, format string) error {
 	file, err := os.Open(inputPath)
 	if err != nil {
@@ -366,7 +371,7 @@ func (ic *ImageConverter) convertImageOptimized(inputPath, outputPath, format st
 	}()
 
 	// Encode based on format with optimized settings
-	switch format {
+	switch strings.ToLower(format) {
 	case "png":
 		encoder := &png.Encoder{
 			CompressionLevel: png.BestSpeed, // Faster compression
