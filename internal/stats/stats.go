@@ -3,6 +3,7 @@ package stats
 import (
 	"fmt"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -33,8 +34,8 @@ type ConversionStatistics struct {
 // NewConversionStatistics creates a new ConversionStatistics instance, with the FailureReasons map initialized to hold conversion error reasons and counts.
 func NewConversionStatistics() *ConversionStatistics {
 	return &ConversionStatistics{
-		FailureReasons:       make(map[string]uint32),
-		DirectoriesProcessed: make(map[string]int),
+		FailureReasons:       make(map[string]uint32, 10), // Pre-allocate for common error types
+		DirectoriesProcessed: make(map[string]int, 50),    // Pre-allocate for typical directory count
 	}
 }
 
@@ -169,7 +170,8 @@ func (cs *ConversionStatistics) PrintReport() {
 func formatBytes(bytes int64) string {
 	const unit = 1024
 	if bytes < unit {
-		return fmt.Sprintf("%d B", bytes)
+		// Use strconv for better performance than fmt.Sprintf for simple integers
+		return strconv.FormatInt(bytes, 10) + " B"
 	}
 
 	div, exp := int64(unit), 0
@@ -178,5 +180,11 @@ func formatBytes(bytes int64) string {
 		exp++
 	}
 
-	return fmt.Sprintf("%.1f %cB", float64(bytes)/float64(div), "KMGTPE"[exp])
+	// Pre-allocate string to avoid multiple allocations
+	units := "KMGTPE"
+	if exp >= len(units) {
+		exp = len(units) - 1
+	}
+
+	return fmt.Sprintf("%.1f %cB", float64(bytes)/float64(div), units[exp])
 }

@@ -46,11 +46,12 @@ func NewBatchProcessor(batchConfig *config.BatchConfig) *BatchProcessor {
 // CollectFilesRecursively collects all image files from the specified directory
 // and its subdirectories based on the batch processing configuration
 func (bp *BatchProcessor) CollectFilesRecursively(inputDir string, supportedExts []string) ([]FileInfo, error) {
-	var files []FileInfo
+	// Pre-allocate slice with reasonable capacity
+	files := make([]FileInfo, 0, 1000)
 	var mu sync.Mutex
 
-	// Create a map for quick extension lookup
-	extMap := make(map[string]bool)
+	// Create a map for quick extension lookup - pre-allocate
+	extMap := make(map[string]bool, len(supportedExts))
 	for _, ext := range supportedExts {
 		extMap[strings.ToLower(ext)] = true
 	}
@@ -128,10 +129,11 @@ func (bp *BatchProcessor) CollectFilesRecursively(inputDir string, supportedExts
 // CollectFilesNonRecursive collects image files only from the specified directory
 // without traversing subdirectories
 func (bp *BatchProcessor) CollectFilesNonRecursive(inputDir string, supportedExts []string) ([]FileInfo, error) {
-	var files []FileInfo
+	// Pre-allocate slice with reasonable capacity
+	files := make([]FileInfo, 0, 100)
 
-	// Create a map for quick extension lookup
-	extMap := make(map[string]bool)
+	// Create a map for quick extension lookup - pre-allocate
+	extMap := make(map[string]bool, len(supportedExts))
 	for _, ext := range supportedExts {
 		extMap[strings.ToLower(ext)] = true
 	}
@@ -206,9 +208,12 @@ func (bp *BatchProcessor) GetOutputPath(inputDir, filePath, targetFormat string)
 		relPath = filepath.Base(filePath)
 	}
 
-	// Remove original extension and add target extension
-	basePath := strings.TrimSuffix(relPath, filepath.Ext(relPath))
-	newPath := basePath + "." + targetFormat
+	// Remove original extension and add target extension - optimize string operations
+	ext := filepath.Ext(relPath)
+	if ext != "" {
+		relPath = relPath[:len(relPath)-len(ext)]
+	}
+	newPath := relPath + "." + targetFormat
 
 	// If custom output directory is specified, use it
 	if bp.config.OutputDir != "" {

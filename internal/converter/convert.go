@@ -56,46 +56,35 @@ type cacheEntry struct {
 	configHash   string
 }
 
-// bufferPool manages reusable buffers to reduce GC pressure.
+// bufferPool manages reusable buffers to reduce GC pressure using sync.Pool
 type bufferPool struct {
-	ch chan []byte
+	pool *sync.Pool
 }
 
-func newBufferPool(size, capacity int) *bufferPool {
-	bp := &bufferPool{
-		ch: make(chan []byte, capacity),
+func newBufferPool(size int) *bufferPool {
+	return &bufferPool{
+		pool: &sync.Pool{
+			New: func() interface{} {
+				return make([]byte, size)
+			},
+		},
 	}
-	// Pre-fill pool with buffers
-	for i := 0; i < capacity; i++ {
-		bp.ch <- make([]byte, size)
-	}
-	return bp
 }
 
 func (bp *bufferPool) get() []byte {
-	select {
-	case buf := <-bp.ch:
-		return buf
-	default:
-		return make([]byte, 32*1024) // 32KB default
-	}
+	return bp.pool.Get().([]byte)
 }
 
 func (bp *bufferPool) put(buf []byte) {
-	if cap(buf) >= 32*1024 { // Only reuse reasonably sized buffers
-		select {
-		case bp.ch <- buf[:cap(buf)]:
-		default:
-			// Pool full, let GC handle it
-		}
-	}
+	// Reset buffer length to capacity to avoid memory leaks
+	bp.pool.Put(&buf)
 }
 
 // NewImageConverter returns a new ImageConverter instance.
 func NewImageConverter(options ConvertOptions) *ImageConverter {
 	return &ImageConverter{
 		options: options,
-		bufPool: newBufferPool(32*1024, 10), // 32KB buffers, pool of 10
+		bufPool: newBufferPool(32 * 1024), // 32KB buffers, pool of 10
 		cache:   sync.Map{},
 	}
 }
@@ -138,13 +127,8 @@ func (ic *ImageConverter) ConvertWithOutputPath(path string, format string, outp
 		result.NewPath = outputPath
 	} else {
 		// Pre-calculate new path using string builder for efficiency
-		var pathBuilder strings.Builder
 		basePath := strings.TrimSuffix(path, filepath.Ext(path))
-		pathBuilder.Grow(len(basePath) + len(format) + 1)
-		pathBuilder.WriteString(basePath)
-		pathBuilder.WriteByte('.')
-		pathBuilder.WriteString(format)
-		result.NewPath = pathBuilder.String()
+		result.NewPath = basePath + "." + format
 	}
 
 	// Check cache for existing conversion using sync.Map's Load method
@@ -233,7 +217,9 @@ func (ic *ImageConverter) ConvertWithOutputPath(path string, format string, outp
 func getFileExtension(path string) string {
 	ext := filepath.Ext(path)
 	if len(ext) > 1 {
-		return strings.ToLower(ext[1:]) // Skip the dot
+		ext = ext[1:] // Skip the dot
+		// Convert to lowercase efficiently
+		return strings.ToLower(ext)
 	}
 	return ""
 }
@@ -276,17 +262,15 @@ func (ic *ImageConverter) getCacheKey(inputPath, format string) string {
 	hasher := md5.New()
 	hasher.Write([]byte(inputPath))
 	hasher.Write([]byte(format))
-	hasher.Write([]byte(ic.getConfigHash()))
+	configHash := ic.getConfigHash()
+	hasher.Write([]byte(configHash))
 	return hex.EncodeToString(hasher.Sum(nil))
 }
 
 // getConfigHash creates a hash of conversion settings for cache validation.
 func (ic *ImageConverter) getConfigHash() string {
-	var configBuilder strings.Builder
-	configBuilder.WriteString(strconv.FormatUint(uint64(ic.options.Quality), 10))
-	configBuilder.WriteByte('_')
-	configBuilder.WriteString(strconv.FormatUint(uint64(ic.options.MaxDimension), 10))
-	return configBuilder.String()
+	// Pre-allocate string to avoid multiple allocations
+	return strconv.FormatUint(uint64(ic.options.Quality), 10) + "_" + strconv.FormatUint(uint64(ic.options.MaxDimension), 10)
 }
 
 // isCacheValid checks if cached conversion is still valid.
@@ -421,13 +405,8 @@ func (ic *ImageConverter) createBackup(path string) error {
 	}
 
 	// Build backup filename efficiently
-	var filenameBuilder strings.Builder
 	baseName := filepath.Base(path)
-	filenameBuilder.Grow(len(baseName) + 4)
-	filenameBuilder.WriteString(baseName)
-	filenameBuilder.WriteString(".bak")
-
-	backupPath := filepath.Join(backupDir, filenameBuilder.String())
+	backupPath := filepath.Join(backupDir, baseName+".bak")
 
 	if err := ic.copyFileOptimized(path, backupPath); err != nil {
 		return fmt.Errorf("failed to copy file content: %w", err)

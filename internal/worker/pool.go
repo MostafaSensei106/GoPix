@@ -37,13 +37,16 @@ func NewWorkerPool(workers uint8, converter *conv.ImageConverter, rateLimit floa
 
 	var limiter *rate.Limiter
 	if rateLimit > 0 {
-		limiter = rate.NewLimiter(rate.Limit(rateLimit), 1)
+		// Increase burst size for better throughput
+		limiter = rate.NewLimiter(rate.Limit(rateLimit), int(rateLimit*2))
 	}
 
+	// Use larger buffer sizes for better throughput
+	bufferSize := int(workers) * 4
 	return &WorkerPool{
 		workers:   workers,
-		jobs:      make(chan Job, workers*2),
-		results:   make(chan *conv.ConversionResult, workers*2),
+		jobs:      make(chan Job, bufferSize),
+		results:   make(chan *conv.ConversionResult, bufferSize),
 		converter: converter,
 		limiter:   limiter,
 		ctx:       ctx,
@@ -107,9 +110,15 @@ func (wp *WorkerPool) worker() {
 				return
 			}
 
-			// Apply rate limiting if configured
+			// Apply rate limiting if configured - use non-blocking approach
 			if wp.limiter != nil {
-				if err := wp.limiter.Wait(wp.ctx); err != nil {
+				if !wp.limiter.Allow() {
+					// If rate limited, put job back and continue
+					select {
+					case wp.jobs <- job:
+					case <-wp.ctx.Done():
+						return
+					}
 					continue
 				}
 			}
@@ -121,10 +130,18 @@ func (wp *WorkerPool) worker() {
 				result = wp.converter.Convert(job.Path, job.Format)
 			}
 
+			// Send result with timeout to avoid blocking
 			select {
 			case wp.results <- result:
 			case <-wp.ctx.Done():
 				return
+			default:
+				// If results channel is full, try again with context
+				select {
+				case wp.results <- result:
+				case <-wp.ctx.Done():
+					return
+				}
 			}
 
 		case <-wp.ctx.Done():

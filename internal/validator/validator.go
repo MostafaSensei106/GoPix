@@ -85,6 +85,7 @@ func hasReadPermission(path string) bool {
 // Returns true if the format is supported, otherwise returns false.
 
 func isValidFormat(format string, supportedFormats []string) bool {
+	// For small lists, linear search is actually faster than map creation
 	for _, supportedFormat := range supportedFormats {
 		if format == supportedFormat {
 			return true

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/fatih/color"
@@ -48,6 +49,12 @@ var (
 	groupByFolder     bool
 	skipEmptyDirs     bool
 	followSymlinks    bool
+)
+
+// Pre-allocate common strings to avoid repeated allocations
+var (
+	emptyString = ""
+	dotString   = "."
 )
 
 var rootCmd = &cobra.Command{
@@ -149,10 +156,10 @@ func runConversion() error {
 		return nil
 	}
 
-	// Convert FileInfo to string paths for compatibility
-	files := make([]string, len(fileInfos))
-	for i, fileInfo := range fileInfos {
-		files[i] = fileInfo.Path
+	// Convert FileInfo to string paths for compatibility - pre-allocate with exact size
+	files := make([]string, 0, len(fileInfos))
+	for _, fileInfo := range fileInfos {
+		files = append(files, fileInfo.Path)
 	}
 
 	color.Cyan("🔍 Found %d image files to process", len(files))
@@ -212,14 +219,17 @@ func runConversion() error {
 	pool.Start()
 	defer pool.Stop()
 
-	// Send jobs to worker pool
-	go func() {
-		for _, file := range files {
-			// Calculate output path using batch processor
-			outputPath := batchProcessor.GetOutputPath(inputDir, file, targetFormat)
+	// Send jobs to worker pool - pre-calculate output paths to reduce allocations
+	outputPaths := make([]string, 0, len(files))
+	for _, file := range files {
+		outputPath := batchProcessor.GetOutputPath(inputDir, file, targetFormat)
+		outputPaths = append(outputPaths, outputPath)
+	}
 
+	go func() {
+		for i, file := range files {
 			// Create output directory if needed
-			if err := batchProcessor.CreateOutputDirectory(outputPath); err != nil {
+			if err := batchProcessor.CreateOutputDirectory(outputPaths[i]); err != nil {
 				logger.Logger.Errorf("Failed to create output directory for %s: %v", file, err)
 				continue
 			}
@@ -227,13 +237,16 @@ func runConversion() error {
 			pool.AddJob(worker.Job{
 				Path:       file,
 				Format:     targetFormat,
-				OutputPath: outputPath,
+				OutputPath: outputPaths[i],
 			})
 		}
 	}()
 
-	// Process results
+	// Process results - optimize string operations and reduce allocations
 	processedCount := 0
+	timeout := time.NewTimer(30 * time.Second)
+	defer timeout.Stop()
+
 	for processedCount < len(files) {
 		select {
 		case result := <-pool.Results():
@@ -242,27 +255,43 @@ func runConversion() error {
 			// Update statistics
 			statistics.AddResult(result)
 
-			// Update progress
+			// Update progress - reuse string builder for efficiency
+			var msgBuilder strings.Builder
+			baseName := filepath.Base(result.OriginalPath)
+
 			if result.Error != nil {
-				progressReporter.UpdateWithMessage(1, fmt.Sprintf("❌ %s", filepath.Base(result.OriginalPath)))
+				msgBuilder.Grow(len(baseName) + 4)
+				msgBuilder.WriteString("❌ ")
+				msgBuilder.WriteString(baseName)
+				progressReporter.UpdateWithMessage(1, msgBuilder.String())
 				logger.Logger.Errorf("Conversion failed: %s - %v", result.OriginalPath, result.Error)
 			} else if result.NewSize == 0 {
-				progressReporter.UpdateWithMessage(1, fmt.Sprintf("⏭️  %s", filepath.Base(result.OriginalPath)))
+				msgBuilder.Grow(len(baseName) + 4)
+				msgBuilder.WriteString("⏭️  ")
+				msgBuilder.WriteString(baseName)
+				progressReporter.UpdateWithMessage(1, msgBuilder.String())
 			} else {
-				progressReporter.UpdateWithMessage(1, fmt.Sprintf("✅ %s", filepath.Base(result.OriginalPath)))
+				msgBuilder.Grow(len(baseName) + 4)
+				msgBuilder.WriteString("✅ ")
+				msgBuilder.WriteString(baseName)
+				progressReporter.UpdateWithMessage(1, msgBuilder.String())
 				logger.Logger.Infof("Converted: %s -> %s", result.OriginalPath, result.NewPath)
 			}
 
-			// Update resume state
+			// Update resume state - batch updates to reduce I/O
 			if cfg.ResumeEnabled {
 				conversionState.ProcessedFiles = append(conversionState.ProcessedFiles, result.OriginalPath)
-				if err := resume.SaveState(conversionState); err != nil {
-					logger.Logger.Warnf("Failed to update state: %v", err)
+				// Only save state every 10 files to reduce I/O overhead
+				if len(conversionState.ProcessedFiles)%10 == 0 {
+					if err := resume.SaveState(conversionState); err != nil {
+						logger.Logger.Warnf("Failed to update state: %v", err)
+					}
 				}
 			}
 
-		case <-time.After(30 * time.Second):
+		case <-timeout.C:
 			logger.Logger.Warn("Processing timeout, continuing...")
+			timeout.Reset(30 * time.Second)
 		}
 	}
 

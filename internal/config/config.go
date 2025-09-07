@@ -127,8 +127,7 @@ func LoadConfig() (*Config, error) {
 		return defaultConfig, nil
 	}
 
-	//load existing config
-
+	//load existing config - use ReadFile for better performance
 	data, err := os.ReadFile(configPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read config file: %v", err)
