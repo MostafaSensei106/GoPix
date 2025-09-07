@@ -8,7 +8,7 @@ GOARCH ?= $(shell go env GOARCH)
 APP_NAME := gopix
 OUTPUT_DIR := bin/$(GOOS)/$(GOARCH)
 OUTPUT := $(OUTPUT_DIR)/$(APP_NAME)
-GoPix_VERSION := 1.5.3
+GoPix_VERSION := 1.5.4
 
 # declare installation directories
 INSTALL_DIR_LINUX := /usr/local/bin
