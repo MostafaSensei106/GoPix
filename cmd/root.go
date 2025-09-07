@@ -11,6 +11,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 
+	"github.com/MostafaSensei106/GoPix/internal/batch"
 	"github.com/MostafaSensei106/GoPix/internal/config"
 	"github.com/MostafaSensei106/GoPix/internal/converter"
 	"github.com/MostafaSensei106/GoPix/internal/logger"
@@ -22,7 +23,7 @@ import (
 )
 
 var (
-	Version   = "v1.5.3"
+	Version   = "v1.5.2"
 	BuildTime = time.Now().Format("2006-01-02 3:04:05pm")
 	cfg       *config.Config
 
@@ -39,20 +40,27 @@ var (
 	resumeFlag   bool
 	rateLimit    float64
 	logToFile    bool
+
+	// Batch processing flags
+	recursiveSearch   bool
+	maxDepth          int
+	preserveStructure bool
+	outputDir         string
+	groupByFolder     bool
+	skipEmptyDirs     bool
+	followSymlinks    bool
+)
+
+// Pre-allocate common strings to avoid repeated allocations
+var (
+	emptyString = ""
+	dotString   = "."
 )
 
 var rootCmd = &cobra.Command{
 	Use:   "gopix",
 	Short: "Advanced image converter with parallel processing write in Go",
 	Long: `GoPix v1.5.3 - Professional Image Converter
-
-A powerful, feature-rich image conversion tool with:
-• Parallel processing for maximum performance
-• Smart resume capability for interrupted operations
-• Comprehensive statistics and progress tracking
-• Automatic backup and validation
-• Configurable quality and size optimization
-• Support for multiple formats: PNG, JPEG, WebP
 
 Created by MostafaSensei106
 GitHub: https://github.com/MostafaSensei106/GoPix`,
@@ -114,19 +122,58 @@ GitHub: https://github.com/MostafaSensei106/GoPix`,
 // state and logs the overall success of the conversion process.
 
 func runConversion() error {
+	// Create batch processor with configuration
+	batchConfig := &config.BatchConfig{
+		RecursiveSearch:   recursiveSearch,
+		MaxDepth:          maxDepth,
+		PreserveStructure: preserveStructure,
+		OutputDir:         outputDir,
+		GroupByFolder:     groupByFolder,
+		SkipEmptyDirs:     skipEmptyDirs,
+		FollowSymlinks:    followSymlinks,
+	}
 
-	// Collect all image files
-	files, err := collectImageFiles(inputDir)
+	// Override with config defaults if flags not set
+	if !recursiveSearch && !preserveStructure && outputDir == "" && !groupByFolder && !skipEmptyDirs && !followSymlinks {
+		batchConfig = &cfg.BatchProcessing
+	}
+
+	batchProcessor := batch.NewBatchProcessor(batchConfig)
+
+	// Validate batch input
+	if err := batchProcessor.ValidateBatchInput(inputDir); err != nil {
+		return fmt.Errorf("batch input validation failed: %v", err)
+	}
+
+	// Collect all image files using batch processor
+	fileInfos, err := batchProcessor.CollectFiles(inputDir, cfg.Extentions)
 	if err != nil {
 		return fmt.Errorf("failed to collect files: %v", err)
 	}
 
-	if len(files) == 0 {
+	if len(fileInfos) == 0 {
 		color.Yellow("⚠️  No supported image files found in: %s", inputDir)
 		return nil
 	}
 
+	// Convert FileInfo to string paths for compatibility - pre-allocate with exact size
+	files := make([]string, 0, len(fileInfos))
+	for _, fileInfo := range fileInfos {
+		files = append(files, fileInfo.Path)
+	}
+
 	color.Cyan("🔍 Found %d image files to process", len(files))
+
+	// Show batch processing info
+	if batchConfig.RecursiveSearch {
+		color.Cyan("📁 Recursive search enabled (max depth: %d)", batchConfig.MaxDepth)
+	}
+	if batchConfig.PreserveStructure {
+		color.Cyan("📂 Preserving directory structure")
+	}
+	if batchConfig.OutputDir != "" {
+		color.Cyan("📤 Output directory: %s", batchConfig.OutputDir)
+	}
 
 	// Setup conversion state for resume capability
 	sessionID := generateSessionID()
@@ -163,22 +210,43 @@ func runConversion() error {
 	progressReporter := progress.NewProgressReporter(uint32(len(files)), "Converting images")
 	statistics := stats.NewConversionStatistics()
 
+	// Set batch processing flags in statistics
+	statistics.BatchMode = true
+	statistics.RecursiveSearch = batchConfig.RecursiveSearch
+	statistics.PreserveStructure = batchConfig.PreserveStructure
+
 	// Start processing
 	pool.Start()
 	defer pool.Stop()
 
-	// Send jobs to worker pool
+	// Send jobs to worker pool - pre-calculate output paths to reduce allocations
+	outputPaths := make([]string, 0, len(files))
+	for _, file := range files {
+		outputPath := batchProcessor.GetOutputPath(inputDir, file, targetFormat)
+		outputPaths = append(outputPaths, outputPath)
+	}
+
 	go func() {
-		for _, file := range files {
+		for i, file := range files {
+			// Create output directory if needed
+			if err := batchProcessor.CreateOutputDirectory(outputPaths[i]); err != nil {
+				logger.Logger.Errorf("Failed to create output directory for %s: %v", file, err)
+				continue
+			}
+
 			pool.AddJob(worker.Job{
-				Path:   file,
-				Format: targetFormat,
+				Path:       file,
+				Format:     targetFormat,
+				OutputPath: outputPaths[i],
 			})
 		}
 	}()
 
-	// Process results
+	// Process results - optimize string operations and reduce allocations
 	processedCount := 0
+	timeout := time.NewTimer(30 * time.Second)
+	defer timeout.Stop()
+
 	for processedCount < len(files) {
 		select {
 		case result := <-pool.Results():
@@ -187,27 +255,43 @@ func runConversion() error {
 			// Update statistics
 			statistics.AddResult(result)
 
-			// Update progress
+			// Update progress - reuse string builder for efficiency
+			var msgBuilder strings.Builder
+			baseName := filepath.Base(result.OriginalPath)
+
 			if result.Error != nil {
-				progressReporter.UpdateWithMessage(1, fmt.Sprintf("❌ %s", filepath.Base(result.OriginalPath)))
+				msgBuilder.Grow(len(baseName) + 4)
+				msgBuilder.WriteString("❌ ")
+				msgBuilder.WriteString(baseName)
+				progressReporter.UpdateWithMessage(1, msgBuilder.String())
 				logger.Logger.Errorf("Conversion failed: %s - %v", result.OriginalPath, result.Error)
 			} else if result.NewSize == 0 {
-				progressReporter.UpdateWithMessage(1, fmt.Sprintf("⏭️  %s", filepath.Base(result.OriginalPath)))
+				msgBuilder.Grow(len(baseName) + 4)
+				msgBuilder.WriteString("⏭️  ")
+				msgBuilder.WriteString(baseName)
+				progressReporter.UpdateWithMessage(1, msgBuilder.String())
 			} else {
-				progressReporter.UpdateWithMessage(1, fmt.Sprintf("✅ %s", filepath.Base(result.OriginalPath)))
+				msgBuilder.Grow(len(baseName) + 4)
+				msgBuilder.WriteString("✅ ")
+				msgBuilder.WriteString(baseName)
+				progressReporter.UpdateWithMessage(1, msgBuilder.String())
 				logger.Logger.Infof("Converted: %s -> %s", result.OriginalPath, result.NewPath)
 			}
 
-			// Update resume state
+			// Update resume state - batch updates to reduce I/O
 			if cfg.ResumeEnabled {
 				conversionState.ProcessedFiles = append(conversionState.ProcessedFiles, result.OriginalPath)
-				if err := resume.SaveState(conversionState); err != nil {
-					logger.Logger.Warnf("Failed to update state: %v", err)
+				// Only save state every 10 files to reduce I/O overhead
+				if len(conversionState.ProcessedFiles)%10 == 0 {
+					if err := resume.SaveState(conversionState); err != nil {
+						logger.Logger.Warnf("Failed to update state: %v", err)
+					}
 				}
 			}
 
-		case <-time.After(30 * time.Second):
+		case <-timeout.C:
 			logger.Logger.Warn("Processing timeout, continuing...")
+			timeout.Reset(30 * time.Second)
 		}
 	}
 
@@ -254,49 +338,6 @@ func handleResume() error {
 	return runConversion()
 }
 
-// collectImageFiles traverses the specified directory and collects all image files
-// with extensions supported by the application. It validates each file path for
-// security before adding it to the result list.
-//
-// Parameters:
-//   dir: The directory path to search for image files.
-//
-// Returns:
-//   A slice of strings containing the file paths of valid image files.
-//   An error if there is an issue accessing the directory or during traversal.
-
-func collectImageFiles(dir string) ([]string, error) {
-	var files []string
-
-	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-
-		if info.IsDir() {
-			return nil
-		}
-
-		// Validate file path for security
-		if err := validator.ValidateFilePath(path); err != nil {
-			logger.Logger.Warnf("Skipping invalid path: %s", path)
-			return nil
-		}
-
-		ext := strings.ToLower(strings.TrimPrefix(filepath.Ext(info.Name()), "."))
-		for _, supportedExt := range cfg.Extentions {
-			if ext == supportedExt {
-				files = append(files, path)
-				break
-			}
-		}
-
-		return nil
-	})
-
-	return files, err
-}
-
 // generateSessionID generates a random 8-byte session ID as a hexadecimal string.
 func generateSessionID() string {
 	bytes := make([]byte, 8)
@@ -336,6 +377,15 @@ func init() {
 	rootCmd.Flags().BoolVar(&resumeFlag, "resume", false, "Resume previous interrupted conversion")
 	// rootCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Enable verbose logging")
 	rootCmd.Flags().BoolVar(&logToFile, "log-file", false, "Save logs to file")
+
+	// Batch processing flags
+	rootCmd.Flags().BoolVar(&recursiveSearch, "recursive", true, "Search subdirectories recursively (default: true)")
+	rootCmd.Flags().IntVar(&maxDepth, "max-depth", 0, "Maximum directory depth to search (0 = unlimited)")
+	rootCmd.Flags().BoolVar(&preserveStructure, "preserve-structure", true, "Preserve directory structure in output (default: true)")
+	rootCmd.Flags().StringVar(&outputDir, "output-dir", "", "Custom output directory for batch processing")
+	rootCmd.Flags().BoolVar(&groupByFolder, "group-by-folder", false, "Group results by source folder")
+	rootCmd.Flags().BoolVar(&skipEmptyDirs, "skip-empty", true, "Skip directories with no images (default: true)")
+	rootCmd.Flags().BoolVar(&followSymlinks, "follow-symlinks", false, "Follow symbolic links")
 
 	// Mark required flags
 	rootCmd.MarkFlagRequired("path")

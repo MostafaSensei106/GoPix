@@ -2,6 +2,8 @@ package stats
 
 import (
 	"fmt"
+	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -22,12 +24,18 @@ type ConversionStatistics struct {
 	SpaceSaved       int
 	CompressionRatio float64
 	FailureReasons   map[string]uint32
+	// Batch processing statistics
+	DirectoriesProcessed map[string]int // Directory -> file count
+	BatchMode            bool
+	RecursiveSearch      bool
+	PreserveStructure    bool
 }
 
 // NewConversionStatistics creates a new ConversionStatistics instance, with the FailureReasons map initialized to hold conversion error reasons and counts.
 func NewConversionStatistics() *ConversionStatistics {
 	return &ConversionStatistics{
-		FailureReasons: make(map[string]uint32),
+		FailureReasons:       make(map[string]uint32, 10), // Pre-allocate for common error types
+		DirectoriesProcessed: make(map[string]int, 50),    // Pre-allocate for typical directory count
 	}
 }
 
@@ -54,6 +62,11 @@ func (cs *ConversionStatistics) AddResult(result *converter.ConversionResult) {
 	cs.TotalSizeBefore += uint64(result.OriginalSize)
 	cs.TotalSizeAfter += uint64(result.NewSize)
 
+	// Track directory information for batch processing
+	if cs.BatchMode {
+		dir := filepath.Dir(result.OriginalPath)
+		cs.DirectoriesProcessed[dir]++
+	}
 }
 
 // Calculate computes the average duration, space saved, and compression ratio from the accumulated
@@ -117,9 +130,33 @@ func (cs *ConversionStatistics) PrintReport() {
 		}
 	}
 
+	// Batch processing information
+	if cs.BatchMode {
+		color.Cyan("\n📁 Batch Processing")
+		color.Cyan(strings.Repeat("=", 50))
+		if cs.RecursiveSearch {
+			color.White("🔄 Recursive search: Enabled")
+		} else {
+			color.White("🔄 Recursive search: Disabled")
+		}
+		if cs.PreserveStructure {
+			color.White("📂 Directory structure: Preserved")
+		} else {
+			color.White("📂 Directory structure: Flattened")
+		}
+		color.White("📊 Directories processed: %d", len(cs.DirectoriesProcessed))
+		if len(cs.DirectoriesProcessed) > 0 {
+			color.White("📁 Directory breakdown:")
+			for dir, count := range cs.DirectoriesProcessed {
+				color.White("  • %s: %d files", dir, count)
+			}
+		}
+	}
+
 	// Failure analysis
 	if len(cs.FailureReasons) > 0 {
-		color.Red("\n🔍 Failuer Analysis")
+		color.Red("\n🔍 Failure Analysis")
+		color.Red(strings.Repeat("=", 50))
 		for reason, count := range cs.FailureReasons {
 			color.Red("  • %s: %d files", reason, count)
 		}
@@ -133,7 +170,8 @@ func (cs *ConversionStatistics) PrintReport() {
 func formatBytes(bytes int64) string {
 	const unit = 1024
 	if bytes < unit {
-		return fmt.Sprintf("%d B", bytes)
+		// Use strconv for better performance than fmt.Sprintf for simple integers
+		return strconv.FormatInt(bytes, 10) + " B"
 	}
 
 	div, exp := int64(unit), 0
@@ -142,5 +180,11 @@ func formatBytes(bytes int64) string {
 		exp++
 	}
 
-	return fmt.Sprintf("%.1f %cB", float64(bytes)/float64(div), "KMGTPE"[exp])
+	// Pre-allocate string to avoid multiple allocations
+	units := "KMGTPE"
+	if exp >= len(units) {
+		exp = len(units) - 1
+	}
+
+	return fmt.Sprintf("%.1f %cB", float64(bytes)/float64(div), units[exp])
 }
