@@ -2,7 +2,7 @@ module github.com/MostafaSensei106/GoPix
 
 go 1.24.6
 
-require github.com/spf13/cobra v1.9.1
+require github.com/spf13/cobra v1.10.1
 
 require (
 	github.com/mattn/go-colorable v0.1.14 // indirect
@@ -20,7 +20,7 @@ require (
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
 	github.com/schollz/progressbar/v3 v3.18.0
 	github.com/sirupsen/logrus v1.9.3
-	github.com/spf13/pflag v1.0.7 // indirect
+	github.com/spf13/pflag v1.0.10 // indirect
 	golang.org/x/time v0.12.0
 	gopkg.in/yaml.v3 v3.0.1
 )
