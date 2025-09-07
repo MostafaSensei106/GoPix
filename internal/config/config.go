@@ -2,10 +2,11 @@ package config
 
 import (
 	"fmt"
-	"gopkg.in/yaml.v3"
 	"os"
 	"path/filepath"
 	"runtime"
+
+	"gopkg.in/yaml.v3"
 )
 
 type Config struct {
@@ -21,6 +22,19 @@ type Config struct {
 	KeepOriginal   bool                   `yaml:"keep_original"`
 	DryRun         bool                   `yaml:"dry_run"`
 	Verbose        bool                   `yaml:"verbose"`
+	// Batch processing options
+	BatchProcessing BatchConfig `yaml:"batch_processing"`
+}
+
+// BatchConfig contains configuration for batch processing features
+type BatchConfig struct {
+	RecursiveSearch   bool   `yaml:"recursive_search"`   // Search subdirectories recursively
+	MaxDepth          int    `yaml:"max_depth"`          // Maximum directory depth to search (0 = unlimited)
+	PreserveStructure bool   `yaml:"preserve_structure"` // Preserve directory structure in output
+	OutputDir         string `yaml:"output_dir"`         // Custom output directory for batch processing
+	GroupByFolder     bool   `yaml:"group_by_folder"`    // Group results by source folder
+	SkipEmptyDirs     bool   `yaml:"skip_empty_dirs"`    // Skip directories with no images
+	FollowSymlinks    bool   `yaml:"follow_symlinks"`    // Follow symbolic links
 }
 
 // DefaultConfig returns the default configuration for gopix.
@@ -74,6 +88,15 @@ func DefaultConfig() *Config {
 				"quality":  80,
 				"lossless": false,
 			},
+		},
+		BatchProcessing: BatchConfig{
+			RecursiveSearch:   true,
+			MaxDepth:          0, // 0 = unlimited depth
+			PreserveStructure: true,
+			OutputDir:         "",
+			GroupByFolder:     false,
+			SkipEmptyDirs:     true,
+			FollowSymlinks:    false,
 		},
 	}
 }

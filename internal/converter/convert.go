@@ -102,6 +102,11 @@ func NewImageConverter(options ConvertOptions) *ImageConverter {
 
 // Convert converts the image at the given path to the given format.
 func (ic *ImageConverter) Convert(path string, format string) *ConversionResult {
+	return ic.ConvertWithOutputPath(path, format, "")
+}
+
+// ConvertWithOutputPath converts the image at the given path to the given format with a custom output path.
+func (ic *ImageConverter) ConvertWithOutputPath(path string, format string, outputPath string) *ConversionResult {
 	start := time.Now()
 	result := &ConversionResult{
 		OriginalPath: path,
@@ -128,14 +133,19 @@ func (ic *ImageConverter) Convert(path string, format string) *ConversionResult 
 		return result
 	}
 
-	// Pre-calculate new path using string builder for efficiency
-	var pathBuilder strings.Builder
-	basePath := strings.TrimSuffix(path, filepath.Ext(path))
-	pathBuilder.Grow(len(basePath) + len(format) + 1)
-	pathBuilder.WriteString(basePath)
-	pathBuilder.WriteByte('.')
-	pathBuilder.WriteString(format)
-	result.NewPath = pathBuilder.String()
+	// Use custom output path if provided, otherwise calculate default
+	if outputPath != "" {
+		result.NewPath = outputPath
+	} else {
+		// Pre-calculate new path using string builder for efficiency
+		var pathBuilder strings.Builder
+		basePath := strings.TrimSuffix(path, filepath.Ext(path))
+		pathBuilder.Grow(len(basePath) + len(format) + 1)
+		pathBuilder.WriteString(basePath)
+		pathBuilder.WriteByte('.')
+		pathBuilder.WriteString(format)
+		result.NewPath = pathBuilder.String()
+	}
 
 	// Check cache for existing conversion using sync.Map's Load method
 	cacheKey := ic.getCacheKey(path, format)

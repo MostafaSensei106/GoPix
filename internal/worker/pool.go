@@ -10,8 +10,9 @@ import (
 )
 
 type Job struct {
-	Path   string
-	Format string
+	Path       string
+	Format     string
+	OutputPath string // Optional custom output path for batch processing
 }
 
 type WorkerPool struct {
@@ -113,7 +114,12 @@ func (wp *WorkerPool) worker() {
 				}
 			}
 
-			result := wp.converter.Convert(job.Path, job.Format)
+			var result *conv.ConversionResult
+			if job.OutputPath != "" {
+				result = wp.converter.ConvertWithOutputPath(job.Path, job.Format, job.OutputPath)
+			} else {
+				result = wp.converter.Convert(job.Path, job.Format)
+			}
 
 			select {
 			case wp.results <- result:

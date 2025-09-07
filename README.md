@@ -37,7 +37,13 @@ GoPix empowers developers, designers, and power users with efficient batch image
 - Custom quality and compression settings
 
 ### 🛠️ Advanced Capabilities
-- Batch processing for folders and subfolders
+- **Enhanced Batch Processing**: Process folders and subfolders with advanced options
+  - Recursive directory traversal with depth control
+  - Preserve or flatten directory structure
+  - Custom output directory support
+  - Group results by source folder
+  - Skip empty directories
+  - Follow symbolic links (optional)
 - Size and resolution limits
 - Configuration profiles with YAML support
 - Dry-run mode to preview changes
@@ -222,6 +228,27 @@ gopix -p ./photos -t jpg -w 8 --rate-limit 5
 gopix -p ./photos -t png -v --log-file
 ```
 
+### 🔄 Batch Processing Examples
+```bash
+# Process all images recursively with structure preservation
+gopix -p ./photos -t webp --recursive --preserve-structure
+
+# Process with custom output directory
+gopix -p ./photos -t png --output-dir ./converted --recursive
+
+# Process with depth limit (only 2 levels deep)
+gopix -p ./photos -t jpg --recursive --max-depth 2
+
+# Process without preserving structure (flatten all files)
+gopix -p ./photos -t webp --recursive --no-preserve-structure
+
+# Process with grouping by folder
+gopix -p ./photos -t png --recursive --group-by-folder
+
+# Process following symbolic links
+gopix -p ./photos -t jpg --recursive --follow-symlinks
+```
+
 ---
 
 ## Configuration
@@ -243,6 +270,16 @@ log_level: "info"
 auto_backup: false
 resume_enabled: true
 # supported_extensions: ["jpg", "jpeg", "png", "webp"] # Do not add any formats here,
+
+# Batch processing configuration
+batch_processing:
+  recursive_search: true
+  max_depth: 0  # 0 = unlimited depth
+  preserve_structure: true
+  output_dir: ""  # Custom output directory (empty = use input directory)
+  group_by_folder: false
+  skip_empty_dirs: true
+  follow_symlinks: false
 ```
 
 All settings can be overridden using CLI flags.
