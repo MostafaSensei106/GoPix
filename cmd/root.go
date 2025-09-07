@@ -22,7 +22,7 @@ import (
 )
 
 var (
-	Version   = "v1.5.2"
+	Version   = "v1.5.3"
 	BuildTime = time.Now().Format("2006-01-02 3:04:05pm")
 	cfg       *config.Config
 
@@ -44,7 +44,7 @@ var (
 var rootCmd = &cobra.Command{
 	Use:   "gopix",
 	Short: "Advanced image converter with parallel processing write in Go",
-	Long: `GoPix v1.5.2 - Professional Image Converter
+	Long: `GoPix v1.5.3 - Professional Image Converter
 
 A powerful, feature-rich image conversion tool with:
 • Parallel processing for maximum performance
