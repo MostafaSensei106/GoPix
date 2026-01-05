@@ -62,6 +62,8 @@ Created by MostafaSensei106
 GitHub: https://github.com/MostafaSensei106/GoPix`,
 
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		// Attempt to suppress libvips and govips info messages via GLib environment variable
+		os.Setenv("G_MESSAGES_LEVELS", "VIPS=error,govips=error")
 		vips.Startup(nil)
 		vips.LoggingSettings(func(messageDomain string, messageLevel vips.LogLevel, message string) {}, vips.LogLevelError)
 		// Load configuration
