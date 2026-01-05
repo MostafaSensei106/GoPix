@@ -103,47 +103,26 @@ func (wp *WorkerPool) Results() <-chan *conv.ConversionResult {
 func (wp *WorkerPool) worker() {
 	defer wp.wg.Done()
 
-	for {
+	for job := range wp.jobs {
+		// Apply rate limiting if configured. This will block until a token is available or the context is canceled.
+		if wp.limiter != nil {
+			if err := wp.limiter.Wait(wp.ctx); err != nil {
+				// Context was canceled
+				return
+			}
+		}
+
+		// Process the job
+		var result *conv.ConversionResult
+		if job.OutputPath != "" {
+			result = wp.converter.ConvertWithOutputPath(job.Path, job.Format, job.OutputPath)
+		} else {
+			result = wp.converter.Convert(job.Path, job.Format)
+		}
+
+		// Send the result, handling context cancellation
 		select {
-		case job, ok := <-wp.jobs:
-			if !ok {
-				return
-			}
-
-			// Apply rate limiting if configured - use non-blocking approach
-			if wp.limiter != nil {
-				if !wp.limiter.Allow() {
-					// If rate limited, put job back and continue
-					select {
-					case wp.jobs <- job:
-					case <-wp.ctx.Done():
-						return
-					}
-					continue
-				}
-			}
-
-			var result *conv.ConversionResult
-			if job.OutputPath != "" {
-				result = wp.converter.ConvertWithOutputPath(job.Path, job.Format, job.OutputPath)
-			} else {
-				result = wp.converter.Convert(job.Path, job.Format)
-			}
-
-			// Send result with timeout to avoid blocking
-			select {
-			case wp.results <- result:
-			case <-wp.ctx.Done():
-				return
-			default:
-				// If results channel is full, try again with context
-				select {
-				case wp.results <- result:
-				case <-wp.ctx.Done():
-					return
-				}
-			}
-
+		case wp.results <- result:
 		case <-wp.ctx.Done():
 			return
 		}

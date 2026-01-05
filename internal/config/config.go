@@ -22,6 +22,7 @@ type Config struct {
 	KeepOriginal   bool                   `yaml:"keep_original"`
 	DryRun         bool                   `yaml:"dry_run"`
 	Verbose        bool                   `yaml:"verbose"`
+	Metadata       string                 `yaml:"metadata"`
 	// Batch processing options
 	BatchProcessing BatchConfig `yaml:"batch_processing"`
 }
@@ -68,11 +69,12 @@ func DefaultConfig() *Config {
 		Workers:       uint8(runtime.NumCPU()),
 		MaxDimension:  0,
 		LogLevel:      "info",
-		Extentions:    []string{"png", "jpg", "jpeg", "webp"},
+		Extentions:    []string{"png", "jpg", "jpeg", "webp", "avif", "heif", "gif", "tiff"},
 		AutoBackup:    true,
 		ResumeEnabled: true,
 		KeepOriginal:  false,
 		DryRun:        false,
+		Metadata:      "keep",
 		// Verbose:       false,
 		OutputSettings: map[string]interface{}{
 			"png": map[string]interface{}{

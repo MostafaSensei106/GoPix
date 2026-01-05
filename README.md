@@ -22,7 +22,7 @@
 
 ## About
 
-Welcome to **GoPix** — a blazing-fast image conversion CLI tool built with Go.
+Welcome to **GoPix** — a blazing-fast image conversion CLI tool built with Go and powered by `libvips` for extreme performance.
 GoPix empowers developers, designers, and power users with efficient batch image conversions, intelligent file handling, and performance-oriented architecture. Whether you’re processing thousands of photos or optimizing a single folder, GoPix handles it with speed and precision.
 
 ---
@@ -30,43 +30,61 @@ GoPix empowers developers, designers, and power users with efficient batch image
 ## Features
 
 ### 🌟 Core Functionality
-- Multi-format support: PNG, JPG, WebP, JPEG
-- Parallel processing: Uses all CPU cores for maximum speed
-- Real-time progress bar with ETA
-- Smart resume for interrupted conversions
-- Custom quality and compression settings
+- **High-Performance Engine**: Powered by `libvips` for 4-8x faster conversions and lower memory usage.
+- **Extensive Format Support**: `PNG`, `JPG`, `WEBP`, `TIFF`, `GIF`, `AVIF`, `HEIF`.
+- **Parallel Processing**: Uses all CPU cores for maximum speed.
+- **Real-time Progress Bar**: Track progress with count, ETA, and throughput.
+- **Smart Resume**: Automatically resume interrupted conversion sessions.
 
 ### 🛠️ Advanced Capabilities
-- **Enhanced Batch Processing**: Process folders and subfolders with advanced options
-  - Recursive directory traversal with depth control
-  - Preserve or flatten directory structure
-  - Custom output directory support
-  - Group results by source folder
-  - Skip empty directories
-  - Follow symbolic links (optional)
-- Size and resolution limits
-- Configuration profiles with YAML support
-- Dry-run mode to preview changes
-- Backup of originals
-- Rate limiting to prevent system overload
-- Detailed post-process stats and reporting
+- **Metadata Control**: Keep or strip EXIF data to reduce file size or protect privacy.
+- **Enhanced Batch Processing**: Process folders and subfolders with advanced options.
+  - Recursive directory traversal with depth control.
+  - Preserve or flatten directory structure.
+  - Custom output directory support.
+- **Quality and Sizing**:
+  - Custom output quality (1-100).
+  - Set max width/height for automatic resizing.
+- **Dry-Run Mode**: Preview all changes without writing any files.
+- **Backup Originals**: Automatically back up original files before converting.
+- **Rate Limiting**: Limit operations per second to prevent system overload.
+- **Detailed Reporting**: Get a full statistical report after each session.
 
 ### 🛡️ Security & Reliability
-- Path validation to prevent directory traversal
-- Safe defaults and permission checking
-- Disk space validation before starting jobs
-- Robust error handling and auto-retry mechanism
+- **Path Validation**: Prevents directory traversal attacks.
+- **Permission Checking**: Ensures files and directories are accessible.
+- **Disk Space Validation**: Checks for sufficient disk space before starting.
 
 ---
 
 ## Installation
 
-## 📦 Easy Install (Linux / Windows)
+### ⚠️ IMPORTANT: New Dependency
 
-> [!IMPORTANT]
-> sudo is required for some installation commands on linux.
-> GoPix Only supports x86_64 architecture.
-> macOS will not be supported in the future.
+GoPix v2.0 and later uses `libvips` for image processing. You **must** have `libvips` installed on your system for GoPix to work.
+
+#### 🔧 Installing libvips
+
+- **On macOS:**
+  ```bash
+  brew install vips
+  ```
+- **On Debian/Ubuntu:**
+  ```bash
+  sudo apt install libvips-dev
+  ```
+- **On Fedora:**
+  ```bash
+  sudo dnf install vips-devel
+  ```
+- **On Windows:**
+  1. Download the latest `vips-dev-w64-all-x.y.z.zip` from the [libvips releases page](https://github.com/libvips/libvips/releases).
+  2. Extract it to a location like `C:\vips-dev`.
+  3. Add the `C:\vips-dev\bin` directory to your system's `PATH`.
+
+---
+
+## 📦 Easy Install (Linux / Windows)
 
 Download the latest pre-built binary for your platform from the [Releases](https://github.com/MostafaSensei106/GoPix/releases) page.
 
@@ -81,11 +99,6 @@ Move the binary to the local bin directory
 sudo mv linux/amd64/gopix /usr/local/bin
 ```
 
-If you want to install for a specific user
-```bash
-mv linux/amd64/gopix /home/$USER/.local/bin
-```
-
 Then you can test the tool by running:
 
 ```bash
@@ -97,10 +110,7 @@ gopix -v
 
 1. Download `gopix-windows-amd64-vX.Y.Z.zip` from the [Releases](https://github.com/MostafaSensei106/GoPix/releases) page.
 2. Extract the archive to a folder of your choice.
-3. Move the binary located at `windows/amd64/gopix.exe` to any folder of your choice or `C:\Program Files\GoPix\bin`.
-3. Add that folder to your **System PATH**:
-
-   * Open *System Properties* → *Environment Variables* → *Path* → *Edit* → *Add new*.
+3. Add that folder to your **System PATH**.
 
 Then you can test the tool by running:
 ```powershell
@@ -108,104 +118,38 @@ gopix -v
 ```
 ---
 
-## 🏗️ Build from Source (Linux, Windows)
+## 🏗️ Build from Source
 
-> ![📝 Note]
-> GoPix uses a `Makefile` to build and install the CLI tool.
-> Make sure you have the `make` utility `Go` and `git`  installed on your system.
-> The script may adjust environment-specific paths depending on your OS.
-
----
-
-### 🔧 Step 1: Install `make` (if not already installed)
-
-#### For **Arch Linux** and based distros:
-```bash
-sudo pacman -S base-devel mingw-w64-gcc
-```
-
-#### For **Debian / Ubuntu** and based distros:
-```bash
-sudo apt install build-essential gcc-mingw-w64-x86-64
-```
-
-#### For **Fedora** and based distros:
-```bash
-sudo dnf install make mingw64-gcc
-```
-
-#### For **openSUSE** and based distros:
-```bash
-sudo zypper install make mingw64-gcc
-```
-
-#### For **Windows**:
-- Option 1: Install [MSYS2](https://www.msys2.org/) [recommended]
-- Option 2: Use [Git Bash](https://gitforwindows.org/) and run the following command:
-  ```bash
-  pacman -Syu
-  pacman -S make
-  ```
-
----
-
-### ⚙️ Step 2: Clone and Build
+Ensure you have `Go`, `git`, `make`, and `libvips` installed first.
 
 ```bash
 git clone --depth 1 https://github.com/MostafaSensei106/GoPix.git
 cd GoPix
 make
 ```
+This will compile and install GoPix locally.
 
----
-
-### ✅ Result
-
-- This will compile GoPix from source optmized for your os and cpu architecture and install it locally.
-- The binary will be placed in your system's executable path (like `/usr/local/bin` on Linux/macOS).
-- You can now run:
-
-```bash
-gopix help
-```
 ---
 
 ### 🆙 Upgrading
 
-> [!Note]
-> To upgrade GoPix, make sure you have the required development tools installed:
-> `go`, `make`, and `git`.
-
-To upgrade GoPix to the latest version, simply run
+To upgrade GoPix to the latest version, simply run:
 ```bash
 gopix upgrade
 ```
-## This will:
-  - Clone or update the latest source from GitHub.
-  - Rebuild the binary using your current platform and       architecture.
-  - Replace the old version automatically.
-
-## OR
-
-  get the latest pre-built binary for your platform from [Releases](https://github.com/MostafaSensei106/GoPix/releases) page and follow <a href="#installation">Installation Instructions</a>.
 
 ---
 
 ## 🚀 Quick Start
 
 ```bash
-# Convert all images in a directory to PNG
-gopix -p ./images -t png
+# Convert all images in a directory to high-quality AVIF
+gopix -p ./images -t avif -q 90
 ```
 
 ```bash
-# Convert to JPEG with 90% quality and keep originals
-gopix -p ./images -t jpg -q 90 --keep
-```
-
-```bash
-# Preview changes without applying them
-gopix -p ./images -t webp --dry-run
+# Convert to JPEG, strip metadata, and keep originals
+gopix -p ./images -t jpg --metadata strip --keep
 ```
 
 ---
@@ -214,69 +158,45 @@ gopix -p ./images -t webp --dry-run
 
 ### 🔁 Basic Conversion
 ```bash
+# Convert to WebP with 95% quality
 gopix -p ./photos -t webp -q 95
 ```
 
-### 💾 With Backup
+### ⚙️ Metadata Control
 ```bash
-gopix -p ./photos -t png --backup
+# Convert to PNG and remove all EXIF data
+gopix -p ./photos -t png --metadata strip
 ```
 
-### ⚙️ Advanced Usage
+### 🔄 Advanced Batch Processing
 ```bash
-gopix -p ./photos -t jpg -w 8 --rate-limit 5
-gopix -p ./photos -t png -v --log-file
-```
-
-### 🔄 Batch Processing Examples
-```bash
-# Process all images recursively with structure preservation
-gopix -p ./photos -t webp --recursive --preserve-structure
-
-# Process with custom output directory
-gopix -p ./photos -t png --output-dir ./converted --recursive
-
-# Process with depth limit (only 2 levels deep)
-gopix -p ./photos -t jpg --recursive --max-depth 2
-
-# Process without preserving structure (flatten all files)
-gopix -p ./photos -t webp --recursive --no-preserve-structure
-
-# Process with grouping by folder
-gopix -p ./photos -t png --recursive --group-by-folder
-
-# Process following symbolic links
-gopix -p ./photos -t jpg --recursive --follow-symlinks
+# Process all images recursively and save to a different directory
+gopix -p ./source_images -t webp --output-dir ./converted_images --recursive
 ```
 
 ---
 
 ## Configuration
 
-GoPix uses a YAML config file located at:
-
-```bash
-# on Linux
-~/Home/$USER/.gopix/config.yaml
-```
+GoPix uses a YAML config file located at `~/.gopix/config.yaml` on Linux/macOS and `%USERPROFILE%\.gopix\config.yaml` on Windows.
 
 ### 🧾 Example Config:
 ```yaml
-default_format: "png"
-quality: 85
+default_format: "avif"
+quality: 90
 workers: 8
 max_dimension: 4096
 log_level: "info"
+metadata: "keep" # Can be: keep, strip
 auto_backup: false
 resume_enabled: true
-# supported_extensions: ["jpg", "jpeg", "png", "webp"] # Do not add any formats here,
 
 # Batch processing configuration
 batch_processing:
   recursive_search: true
-  max_depth: 0  # 0 = unlimited depth
+  max_depth: 0
   preserve_structure: true
-  output_dir: ""  # Custom output directory (empty = use input directory)
+  output_dir: ""
   group_by_folder: false
   skip_empty_dirs: true
   follow_symlinks: false
@@ -291,10 +211,9 @@ All settings can be overridden using CLI flags.
 | Technology            | Description                                                                 |
 |------------------------|-----------------------------------------------------------------------------|
 | 🧠 **Golang**            | [go.dev](https://go.dev) — The core language powering GoPix: fast and efficient |
+| 🚀 **Govips**           | [davidbyttow/govips](https://github.com/davidbyttow/govips) — High-performance image processing via libvips |
 | 🛠️ **Cobra (CLI)**       | [spf13/cobra](https://github.com/spf13/cobra) — CLI commands, flags, and UX |
 | 🎨 **Fatih/color**       | [fatih/color](https://github.com/fatih/color) — Terminal text styling and coloring |
-| 🔄 **WebP encoder**      | [chai2010/webp](https://github.com/chai2010/webp) — Image conversion to/from WebP |
-| 📏 **Resize**            | [nfnt/resize](https://github.com/nfnt/resize) — Image resizing utilities |
 | 📉 **Progress bar**      | [schollz/progressbar](https://github.com/schollz/progressbar) — Beautiful terminal progress bar |
 | 📦 **YAML config**       | [gopkg.in/yaml.v3](https://pkg.go.dev/gopkg.in/yaml.v3) — Config file parser |
 | 📜 **Logrus**            | [sirupsen/logrus](https://github.com/sirupsen/logrus) — Advanced logging framework |
@@ -303,18 +222,7 @@ All settings can be overridden using CLI flags.
 
 ## Contributing
 
-Contributions are welcome! Here’s how to get started:
-
-1. Fork the repository
-2. Create a new branch:
-   `git checkout -b feature/YourFeature`
-3. Commit your changes:
-   `git commit -m "Add amazing feature"`
-4. Push to your branch:
-   `git push origin feature/YourFeature`
-5. Open a pull request
-
-> 💡 Please open an issue first for major feature ideas or changes.
+Contributions are welcome! Please open an issue first to discuss any major changes.
 
 ---
 
@@ -325,5 +233,3 @@ See the [LICENSE](LICENSE) file for full details.
 <p align="center">
   Made with ❤️ by <a href="https://github.com/MostafaSensei106">MostafaSensei106</a>
 </p>
-
----
