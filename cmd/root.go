@@ -24,7 +24,7 @@ import (
 )
 
 var (
-	Version   = "v1.5.4"
+	Version   = "v2.0.0"
 	BuildTime = time.Now().Format("2006-01-02 3:04:05pm")
 	cfg       *config.Config
 
@@ -53,22 +53,17 @@ var (
 	followSymlinks    bool
 )
 
-// Pre-allocate common strings to avoid repeated allocations
-var (
-	emptyString = ""
-	dotString   = "."
-)
-
 var rootCmd = &cobra.Command{
 	Use:   "gopix",
 	Short: "Advanced image converter with parallel processing write in Go",
-	Long: `GoPix v1.5.4 - Professional Image Converter
+	Long: `GoPix v2.0.0 - Professional Image Converter
 
 Created by MostafaSensei106
 GitHub: https://github.com/MostafaSensei106/GoPix`,
 
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		vips.Startup(nil)
+		vips.LoggingSettings(func(messageDomain string, messageLevel vips.LogLevel, message string) {}, vips.LogLevelError)
 		// Load configuration
 		var err error
 		cfg, err = config.LoadConfig()
