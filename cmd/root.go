@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/davidbyttow/govips/v2/vips"
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 
@@ -23,7 +24,7 @@ import (
 )
 
 var (
-	Version   = "v1.5.4"
+	Version   = "v2.0.0"
 	BuildTime = time.Now().Format("2006-01-02 3:04:05pm")
 	cfg       *config.Config
 
@@ -40,6 +41,7 @@ var (
 	resumeFlag   bool
 	rateLimit    float64
 	logToFile    bool
+	metadata     string
 
 	// Batch processing flags
 	recursiveSearch   bool
@@ -51,21 +53,19 @@ var (
 	followSymlinks    bool
 )
 
-// Pre-allocate common strings to avoid repeated allocations
-var (
-	emptyString = ""
-	dotString   = "."
-)
-
 var rootCmd = &cobra.Command{
 	Use:   "gopix",
 	Short: "Advanced image converter with parallel processing write in Go",
-	Long: `GoPix v1.5.4 - Professional Image Converter
+	Long: `GoPix v2.0.0 - Professional Image Converter
 
 Created by MostafaSensei106
 GitHub: https://github.com/MostafaSensei106/GoPix`,
 
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		// Attempt to suppress libvips and govips info messages via GLib environment variable
+		os.Setenv("G_MESSAGES_LEVELS", "VIPS=error,govips=error")
+		vips.Startup(nil)
+		vips.LoggingSettings(func(messageDomain string, messageLevel vips.LogLevel, message string) {}, vips.LogLevelError)
 		// Load configuration
 		var err error
 		cfg, err = config.LoadConfig()
@@ -99,6 +99,9 @@ GitHub: https://github.com/MostafaSensei106/GoPix`,
 		}
 		if targetFormat == "" {
 			targetFormat = cfg.DefaultFormat
+		}
+		if metadata == "" {
+			metadata = cfg.Metadata
 		}
 
 		// Validate inputs
@@ -199,6 +202,7 @@ func runConversion() error {
 		KeepOriginal: keepOriginal,
 		DryRun:       dryRun,
 		Backup:       backup,
+		Metadata:     metadata,
 	}
 
 	imageConverter := converter.NewImageConverter(converterOptions)
@@ -350,6 +354,7 @@ func Execute() {
 		color.Red("❌ Error: %v", err)
 		os.Exit(1)
 	}
+	vips.Shutdown()
 }
 
 // init initializes the command-line interface by setting up the root command
@@ -362,7 +367,7 @@ func Execute() {
 func init() {
 	// Input/Output flags
 	rootCmd.Flags().StringVarP(&inputDir, "path", "p", "", "Path to the image folder (required)")
-	rootCmd.Flags().StringVarP(&targetFormat, "to", "t", "", "Target format default: png (png, jpg, jpeg, webp)")
+	rootCmd.Flags().StringVarP(&targetFormat, "to", "t", "", "Target format (png, jpg, jpeg, webp, avif, heif, gif, tiff)")
 	rootCmd.Flags().BoolVar(&keepOriginal, "keep", false, "Keep original images after conversion")
 	rootCmd.Flags().BoolVar(&dryRun, "dry-run", false, "Preview changes without converting")
 
@@ -375,6 +380,7 @@ func init() {
 	// Feature flags
 	rootCmd.Flags().BoolVar(&backup, "backup", false, "Create backup of original files")
 	rootCmd.Flags().BoolVar(&resumeFlag, "resume", false, "Resume previous interrupted conversion")
+	rootCmd.Flags().StringVar(&metadata, "metadata", "keep", "Metadata handling (keep, strip, strip-location)")
 	// rootCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Enable verbose logging")
 	rootCmd.Flags().BoolVar(&logToFile, "log-file", false, "Save logs to file")
 

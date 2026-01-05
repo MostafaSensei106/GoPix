@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	appErrors "github.com/MostafaSensei106/GoPix/internal/errors"
 )
 
 type ValidationError struct {
@@ -21,36 +23,25 @@ func (e *ValidationError) Error() string {
 //
 // It checks if the input directory exists and has read permission, and if the target format is supported.
 //
-// If any of the checks fail, it returns a ValidationError with the field name and message describing the error.
-func ValidateInputs(inputDirectory, targetFormat string, supportedFormatschan []string) error {
-
+// If any of the checks fail, it returns a specific error type.
+func ValidateInputs(inputDirectory, targetFormat string, supportedFormats []string) error {
 	if inputDirectory == "" {
-		return &ValidationError{"inputDir", "input directory is required"}
+		return fmt.Errorf("%w: input directory is required", appErrors.ErrSourceNotFound)
 	}
 
 	if _, err := os.Stat(inputDirectory); os.IsNotExist(err) {
-		return &ValidationError{
-			Field:   "inputDirectory",
-			Message: fmt.Sprintf("input directory %s does not exist", inputDirectory),
-		}
+		return fmt.Errorf("%w: input directory %s does not exist", appErrors.ErrSourceNotFound, inputDirectory)
 	}
 
 	if !hasReadPermission(inputDirectory) {
-		return &ValidationError{
-			Field:   "inputDirectory",
-			Message: fmt.Sprintf("input directory %s does not have read permission", inputDirectory),
-		}
+		return fmt.Errorf("%w: input directory %s does not have read permission", appErrors.ErrPermissionDenied, inputDirectory)
 	}
 
-	if !isValidFormat(targetFormat, supportedFormatschan) {
-		return &ValidationError{
-			Field:   "targetFormat",
-			Message: fmt.Sprintf("target format %s is not supported", targetFormat),
-		}
+	if !isValidFormat(targetFormat, supportedFormats) {
+		return fmt.Errorf("%w: target format %s is not supported", appErrors.ErrUnsupportedFormat, targetFormat)
 	}
 	return nil
 }
-
 // ValidateFilePath checks if the given path is valid and does not contain any path traversal.
 // Returns an error if the path is invalid, otherwise returns nil.
 func ValidateFilePath(path string) error {
@@ -60,14 +51,6 @@ func ValidateFilePath(path string) error {
 	}
 	return nil
 }
-
-// func HasSufficientSpace(dir string, requiredBytes int64) bool {
-//     var stat syscall.Statfs_t
-//     if err := syscall.Statfs(dir, &stat); err != nil {
-//         return false
-//     }
-//     return int64(stat.Bavail)*int64(stat.Bsize) > requiredBytes
-// }
 
 // hasReadPermission checks if the specified path can be opened for reading.
 // Returns true if the path can be opened, otherwise returns false.

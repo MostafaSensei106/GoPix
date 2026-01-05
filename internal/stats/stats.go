@@ -1,6 +1,7 @@
 package stats
 
 import (
+	"errors"
 	"fmt"
 	"path/filepath"
 	"strconv"
@@ -10,46 +11,56 @@ import (
 	"github.com/fatih/color"
 
 	"github.com/MostafaSensei106/GoPix/internal/converter"
+	appErrors "github.com/MostafaSensei106/GoPix/internal/errors"
 )
 
+type FailureAnalysis struct {
+	Corrupted   uint32
+	Permission  uint32
+	Unsupported uint32
+	Other       uint32
+}
+
 type ConversionStatistics struct {
-	TotalFiles       uint32
-	ConvertedFiles   uint32
-	SkippedFiles     uint32
-	FailedFiles      uint32
-	TotalSizeBefore  uint64
-	TotalSizeAfter   uint64
-	TotalDuration    time.Duration
-	AverageDuration  time.Duration
-	SpaceSaved       int
-	CompressionRatio float64
-	FailureReasons   map[string]uint32
-	// Batch processing statistics
-	DirectoriesProcessed map[string]int // Directory -> file count
+	TotalFiles           uint32
+	ConvertedFiles       uint32
+	SkippedFiles         uint32
+	FailedFiles          uint32
+	TotalSizeBefore      uint64
+	TotalSizeAfter       uint64
+	TotalDuration        time.Duration
+	AverageDuration      time.Duration
+	SpaceSaved           int
+	CompressionRatio     float64
+	Failures             FailureAnalysis
+	DirectoriesProcessed map[string]int
 	BatchMode            bool
 	RecursiveSearch      bool
 	PreserveStructure    bool
 }
 
-// NewConversionStatistics creates a new ConversionStatistics instance, with the FailureReasons map initialized to hold conversion error reasons and counts.
 func NewConversionStatistics() *ConversionStatistics {
 	return &ConversionStatistics{
-		FailureReasons:       make(map[string]uint32, 10), // Pre-allocate for common error types
-		DirectoriesProcessed: make(map[string]int, 50),    // Pre-allocate for typical directory count
+		DirectoriesProcessed: make(map[string]int, 50),
 	}
 }
 
-// AddResult increments the total number of files, total duration, and adds the size of the original and new files.
-// If the result contains an error, it increments the failed files count and adds the error to the failure reasons map.
-// If the result indicates that the file was skipped, it increments the skipped files count.
-// Otherwise, it increments the converted files count and adds the original and new file sizes to the total sizes.
 func (cs *ConversionStatistics) AddResult(result *converter.ConversionResult) {
 	cs.TotalFiles++
 	cs.TotalDuration += result.Duration
 
 	if result.Error != nil {
 		cs.FailedFiles++
-		cs.FailureReasons[result.Error.Error()]++
+		switch {
+		case errors.Is(result.Error, appErrors.ErrCorruptedImage):
+			cs.Failures.Corrupted++
+		case errors.Is(result.Error, appErrors.ErrPermissionDenied):
+			cs.Failures.Permission++
+		case errors.Is(result.Error, appErrors.ErrUnsupportedFormat):
+			cs.Failures.Unsupported++
+		default:
+			cs.Failures.Other++
+		}
 		return
 	}
 
@@ -62,34 +73,23 @@ func (cs *ConversionStatistics) AddResult(result *converter.ConversionResult) {
 	cs.TotalSizeBefore += uint64(result.OriginalSize)
 	cs.TotalSizeAfter += uint64(result.NewSize)
 
-	// Track directory information for batch processing
 	if cs.BatchMode {
 		dir := filepath.Dir(result.OriginalPath)
 		cs.DirectoriesProcessed[dir]++
 	}
 }
 
-// Calculate computes the average duration, space saved, and compression ratio from the accumulated
-// conversion results. It should be called after all results have been added to the ConversionStatistics
-// instance.
 func (cs *ConversionStatistics) Calculate() {
 	if cs.TotalFiles > 0 {
 		cs.AverageDuration = cs.TotalDuration / time.Duration(cs.TotalFiles)
 	}
 
-	cs.SpaceSaved = int(cs.TotalSizeBefore - cs.TotalSizeAfter)
 	if cs.TotalSizeBefore > 0 {
+		cs.SpaceSaved = int(cs.TotalSizeBefore - cs.TotalSizeAfter)
 		cs.CompressionRatio = float64(cs.TotalSizeAfter) / float64(cs.TotalSizeBefore)
 	}
 }
 
-// PrintReport prints a summary of the conversion statistics to the console.
-// It displays the total number of files processed, the number of converted,
-// skipped, and failed files, the total conversion time, the average time per
-// file, and the effective processing speed. It also displays the original and
-// new total sizes of the files and the space saved (or increased) as a result
-// of the conversion. Finally, it lists the failure reasons and the number of
-// files that failed for each reason.
 func (cs *ConversionStatistics) PrintReport() {
 	cs.Calculate()
 
@@ -103,7 +103,7 @@ func (cs *ConversionStatistics) PrintReport() {
 	color.Cyan("📁 Total processed: %d", cs.TotalFiles)
 
 	// Time statistics
-	color.Cyan("\n⏱️  Time Analysis")
+	color.Cyan("\n⏱️ Time Analysis")
 	color.Cyan(strings.Repeat("=", 50))
 	color.White("🔄 Total conversion time (sum of all file durations): %v", cs.TotalDuration.Round(time.Millisecond))
 	color.White("📊 Avg. time per file: ~%v (non-parallel)", cs.AverageDuration.Round(time.Millisecond))
@@ -145,32 +145,30 @@ func (cs *ConversionStatistics) PrintReport() {
 			color.White("📂 Directory structure: Flattened")
 		}
 		color.White("📊 Directories processed: %d", len(cs.DirectoriesProcessed))
-		if len(cs.DirectoriesProcessed) > 0 {
-			color.White("📁 Directory breakdown:")
-			for dir, count := range cs.DirectoriesProcessed {
-				color.White("  • %s: %d files", dir, count)
-			}
-		}
 	}
 
 	// Failure analysis
-	if len(cs.FailureReasons) > 0 {
+	if cs.FailedFiles > 0 {
 		color.Red("\n🔍 Failure Analysis")
 		color.Red(strings.Repeat("=", 50))
-		for reason, count := range cs.FailureReasons {
-			color.Red("  • %s: %d files", reason, count)
+		if cs.Failures.Corrupted > 0 {
+			color.Red("  • Corrupted images: %d", cs.Failures.Corrupted)
+		}
+		if cs.Failures.Permission > 0 {
+			color.Red("  • Permission errors: %d", cs.Failures.Permission)
+		}
+		if cs.Failures.Unsupported > 0 {
+			color.Red("  • Unsupported formats: %d", cs.Failures.Unsupported)
+		}
+		if cs.Failures.Other > 0 {
+			color.Red("  • Other errors: %d", cs.Failures.Other)
 		}
 	}
 }
 
-// formatBytes converts a size in bytes to a human-readable string using binary prefixes (e.g., KB, MB).
-// It returns the size formatted with one decimal place and the appropriate unit, starting from bytes.
-// For example, 1024 bytes is converted to "1.0 KB". This function supports units up to exabytes (EB).
-
 func formatBytes(bytes int64) string {
 	const unit = 1024
 	if bytes < unit {
-		// Use strconv for better performance than fmt.Sprintf for simple integers
 		return strconv.FormatInt(bytes, 10) + " B"
 	}
 
@@ -180,7 +178,6 @@ func formatBytes(bytes int64) string {
 		exp++
 	}
 
-	// Pre-allocate string to avoid multiple allocations
 	units := "KMGTPE"
 	if exp >= len(units) {
 		exp = len(units) - 1
