@@ -385,12 +385,12 @@ func init() {
 	rootCmd.Flags().BoolVar(&logToFile, "log-file", false, "Save logs to file")
 
 	// Batch processing flags
-	rootCmd.Flags().BoolVar(&recursiveSearch, "recursive", true, "Search subdirectories recursively (default: true)")
+	rootCmd.Flags().BoolVar(&recursiveSearch, "recursive", true, "Search subdirectories recursively")
 	rootCmd.Flags().IntVar(&maxDepth, "max-depth", 0, "Maximum directory depth to search (0 = unlimited)")
-	rootCmd.Flags().BoolVar(&preserveStructure, "preserve-structure", true, "Preserve directory structure in output (default: true)")
+	rootCmd.Flags().BoolVar(&preserveStructure, "preserve-structure", true, "Preserve directory structure in output")
 	rootCmd.Flags().StringVar(&outputDir, "output-dir", "", "Custom output directory for batch processing")
 	rootCmd.Flags().BoolVar(&groupByFolder, "group-by-folder", false, "Group results by source folder")
-	rootCmd.Flags().BoolVar(&skipEmptyDirs, "skip-empty", true, "Skip directories with no images (default: true)")
+	rootCmd.Flags().BoolVar(&skipEmptyDirs, "skip-empty", true, "Skip directories with no images")
 	rootCmd.Flags().BoolVar(&followSymlinks, "follow-symlinks", false, "Follow symbolic links")
 
 	// Mark required flags
