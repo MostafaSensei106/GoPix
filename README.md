@@ -30,6 +30,7 @@ GoPix empowers developers, designers, and power users with efficient batch image
 ## Features
 
 ### 🌟 Core Functionality
+
 - **High-Performance Engine**: Powered by `libvips` for 4-8x faster conversions and lower memory usage.
 - **Extensive Format Support**: `PNG`, `JPG`, `WEBP`, `TIFF`, `GIF`, `AVIF`, `HEIF`.
 - **Parallel Processing**: Uses all CPU cores for maximum speed.
@@ -37,6 +38,7 @@ GoPix empowers developers, designers, and power users with efficient batch image
 - **Smart Resume**: Automatically resume interrupted conversion sessions.
 
 ### 🛠️ Advanced Capabilities
+
 - **Metadata Control**: Keep or strip EXIF data to reduce file size or protect privacy.
 - **Enhanced Batch Processing**: Process folders and subfolders with advanced options.
   - Recursive directory traversal with depth control.
@@ -51,6 +53,7 @@ GoPix empowers developers, designers, and power users with efficient batch image
 - **Detailed Reporting**: Get a full statistical report after each session.
 
 ### 🛡️ Security & Reliability
+
 - **Path Validation**: Prevents directory traversal attacks.
 - **Permission Checking**: Ensures files and directories are accessible.
 - **Disk Space Validation**: Checks for sufficient disk space before starting.
@@ -89,12 +92,15 @@ GoPix v2.0 and later uses `libvips` for image processing. You **must** have `lib
 Download the latest pre-built binary for your platform from the [Releases](https://github.com/MostafaSensei106/GoPix/releases) page.
 
 ### 🐧 Linux
+
 Extract the archive
+
 ```bash
 tar -xzf gopix-linux-amd64.vX.Y.Z.tar.gz
 ```
 
 Move the binary to the local bin directory
+
 ```bash
 sudo mv linux/amd64/gopix /usr/local/bin
 ```
@@ -104,6 +110,7 @@ Then you can test the tool by running:
 ```bash
 gopix -v
 ```
+
 ---
 
 ### 🪟 Windows
@@ -113,9 +120,11 @@ gopix -v
 3. Add that folder to your **System PATH**.
 
 Then you can test the tool by running:
+
 ```powershell
 gopix -v
 ```
+
 ---
 
 ## 🏗️ Build from Source
@@ -127,6 +136,7 @@ git clone --depth 1 https://github.com/MostafaSensei106/GoPix.git
 cd GoPix
 make
 ```
+
 This will compile and install GoPix locally.
 
 ---
@@ -134,6 +144,7 @@ This will compile and install GoPix locally.
 ### 🆙 Upgrading
 
 To upgrade GoPix to the latest version, simply run:
+
 ```bash
 gopix upgrade
 ```
@@ -157,18 +168,21 @@ gopix -p ./images -t jpg --metadata strip --keep
 ## 📋 Usage Examples
 
 ### 🔁 Basic Conversion
+
 ```bash
 # Convert to WebP with 95% quality
 gopix -p ./photos -t webp -q 95
 ```
 
 ### ⚙️ Metadata Control
+
 ```bash
 # Convert to PNG and remove all EXIF data
 gopix -p ./photos -t png --metadata strip
 ```
 
 ### 🔄 Advanced Batch Processing
+
 ```bash
 # Process all images recursively and save to a different directory
 gopix -p ./source_images -t webp --output-dir ./converted_images --recursive
@@ -181,6 +195,7 @@ gopix -p ./source_images -t webp --output-dir ./converted_images --recursive
 GoPix uses a YAML config file located at `~/.gopix/config.yaml` on Linux/macOS and `%USERPROFILE%\.gopix\config.yaml` on Windows.
 
 ### 🧾 Example Config:
+
 ```yaml
 default_format: "avif"
 quality: 90
@@ -208,21 +223,32 @@ All settings can be overridden using CLI flags.
 
 ## Technologies
 
-| Technology            | Description                                                                 |
-|------------------------|-----------------------------------------------------------------------------|
-| 🧠 **Golang**            | [go.dev](https://go.dev) — The core language powering GoPix: fast and efficient |
-| 🚀 **Govips**           | [davidbyttow/govips](https://github.com/davidbyttow/govips) — High-performance image processing via libvips |
-| 🛠️ **Cobra (CLI)**       | [spf13/cobra](https://github.com/spf13/cobra) — CLI commands, flags, and UX |
-| 🎨 **Fatih/color**       | [fatih/color](https://github.com/fatih/color) — Terminal text styling and coloring |
-| 📉 **Progress bar**      | [schollz/progressbar](https://github.com/schollz/progressbar) — Beautiful terminal progress bar |
-| 📦 **YAML config**       | [gopkg.in/yaml.v3](https://pkg.go.dev/gopkg.in/yaml.v3) — Config file parser |
-| 📜 **Logrus**            | [sirupsen/logrus](https://github.com/sirupsen/logrus) — Advanced logging framework |
+| Technology          | Description                                                                                                 |
+| ------------------- | ----------------------------------------------------------------------------------------------------------- |
+| 🧠 **Golang**       | [go.dev](https://go.dev) — The core language powering GoPix: fast and efficient                             |
+| 🚀 **Govips**       | [davidbyttow/govips](https://github.com/davidbyttow/govips) — High-performance image processing via libvips |
+| 🛠️ **Cobra (CLI)**  | [spf13/cobra](https://github.com/spf13/cobra) — CLI commands, flags, and UX                                 |
+| 🎨 **Fatih/color**  | [fatih/color](https://github.com/fatih/color) — Terminal text styling and coloring                          |
+| 📉 **Progress bar** | [schollz/progressbar](https://github.com/schollz/progressbar) — Beautiful terminal progress bar             |
+| 📦 **YAML config**  | [gopkg.in/yaml.v3](https://pkg.go.dev/gopkg.in/yaml.v3) — Config file parser                                |
+| 📜 **Logrus**       | [sirupsen/logrus](https://github.com/sirupsen/logrus) — Advanced logging framework                          |
 
 ---
 
 ## Contributing
 
-Contributions are welcome! Please open an issue first to discuss any major changes.
+Contributions are welcome! Here’s how to get started:
+
+1.  Fork the repository.
+2.  Create a new branch:
+    `git checkout -b feature/YourFeature`
+3.  Commit your changes:
+    `git commit -m "Add amazing feature"`
+4.  Push to your branch:
+    `git push origin feature/YourFeature`
+5.  Open a pull request.
+
+> 💡 Please read our **[Contributing Guidelines](CONTRIBUTING.md)** and open an issue first for major feature ideas or changes.
 
 ---
 
@@ -230,6 +256,7 @@ Contributions are welcome! Please open an issue first to discuss any major chang
 
 This project is licensed under the **GPL-3.0 License**.
 See the [LICENSE](LICENSE) file for full details.
+
 <p align="center">
   Made with ❤️ by <a href="https://github.com/MostafaSensei106">MostafaSensei106</a>
 </p>
