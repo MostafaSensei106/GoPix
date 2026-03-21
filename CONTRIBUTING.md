@@ -113,9 +113,3 @@ To submit a pull request:
 2. Create a branch from `main`
 3. Write clean and readable code
 4. Add or update tests if needed
-5. Run the following before submitting:
-   ```bash
-   dart test
-   dart analyze
-   dart format .
-   ```
